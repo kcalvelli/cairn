@@ -134,11 +134,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1778508340,
-        "narHash": "sha256-s7TGy/3V40xeFnXkLCE3GBUZ85eW5OX1RNMgg7WUbBo=",
+        "lastModified": 1778512125,
+        "narHash": "sha256-Oi6ejukIhazmCWiEl6N+alFPrUOxPjAi6VMZBPMVC9o=",
         "owner": "kcalvelli",
         "repo": "cairn-mail",
-        "rev": "a216e6ccb4491b8df5e48745e459c98bb1847ea6",
+        "rev": "737a96abd18540bae766f8e87f88060e61db69db",
         "type": "github"
       },
       "original": {
@@ -191,11 +191,11 @@
         "quickshell": "quickshell"
       },
       "locked": {
-        "lastModified": 1778508021,
-        "narHash": "sha256-2rM28ac2cm721oNSVepAV0eBtCJpCtYH2HtpHaHbfL0=",
+        "lastModified": 1778510969,
+        "narHash": "sha256-Il2BOhY9Ao7oCrc8l9WPxbrNaqfhO1TO2rbKarVJd/E=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "676219bc09fc932d6ee3b8810dd11b602620a8f0",
+        "rev": "26903057241fb7ed794612a90ad53946fcabb36a",
         "type": "github"
       },
       "original": {
@@ -625,11 +625,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1778490290,
-        "narHash": "sha256-PlnaeZW/7teU+SP0MsL/yJfsqNcxB/icjqUHo/9odkg=",
+        "lastModified": 1778509947,
+        "narHash": "sha256-q4VAN6lptgy7Vv4F1LKvvRNABHdj9B1EpTH81VhxzFQ=",
         "owner": "natsukium",
         "repo": "mcp-servers-nix",
-        "rev": "6b559378b0464f91f0ba38f1a84702277defa27b",
+        "rev": "91656c6c73e8955747f47b700041628cbd537095",
         "type": "github"
       },
       "original": {
