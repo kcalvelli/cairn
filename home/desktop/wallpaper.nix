@@ -45,6 +45,20 @@ in
         If false, wallpaper files will still be updated, but the active wallpaper won't change.
       '';
     };
+
+    overviewBlur = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Seed the DankMaterialShell `blurredWallpaperLayer` setting so the
+        niri overview shows DMS's native blurred-wallpaper backdrop out of
+        the box. Seeded at most once, only when the key is absent from
+        DMS's on-disk settings; once DMS or the user (via the DMS GUI)
+        owns the key it is never touched again, so the DMS GUI remains the
+        runtime opt-out. This option only sets the *default* — it is not a
+        reconciler and does not fight the GUI.
+      '';
+    };
   };
 
   config = lib.mkMerge [
@@ -56,9 +70,60 @@ in
         executable = true;
       };
 
-      # Ensure cache directory for wallpaper blur
-      home.activation.createNiriCache = config.lib.dag.entryAfter [ "writeBoundary" ] ''
-        $DRY_RUN_CMD mkdir -p $HOME/.cache/niri
+      # Seed DMS's native overview-blur default exactly once, then hand
+      # ownership to DMS. Sentinel is a dedicated marker file, NOT the
+      # presence of the `blurredWallpaperLayer` key: DMS persists every
+      # settings key (defaults included) on its first save, so the key is
+      # present for anyone who has ever launched DMS and a key-absent gate
+      # would never fire. Mirrors the setRandomWallpaper hash-sentinel in
+      # this file. Marker is written only on confirmed success, so an
+      # unconfirmed attempt retries next activation. Prefer the DMS IPC
+      # setter when DMS is up (applies live, persists via saveSettings, no
+      # clobber race); fall back to a jq write when DMS is down.
+      home.activation.seedOverviewBlur = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+        SETTINGS="$HOME/.config/DankMaterialShell/settings.json"
+        MARKER="$HOME/.cache/cairn-overview-blur-seeded"
+        DESIRED=${lib.boolToString cfg.overviewBlur}
+        JQ=${pkgs.jq}/bin/jq
+        DMS=${inputs.dankMaterialShell.packages.${pkgs.stdenv.hostPlatform.system}.default}/bin/dms
+
+        if [ ! -f "$MARKER" ]; then
+          SEEDED=0
+          # Best-effort IPC first; DMS performs the write itself.
+          if "$DMS" ipc call settings set blurredWallpaperLayer "$DESIRED" 2>/dev/null \
+            | grep -q SETTINGS_SET_SUCCESS; then
+            SEEDED=1
+            [ -n "''${VERBOSE:-}" ] && echo "Cairn: seeded overview blur ($DESIRED) via DMS IPC"
+          elif [ ! -f "$SETTINGS" ]; then
+            # DMS not running and no settings yet: write a partial file.
+            $DRY_RUN_CMD mkdir -p "$(dirname "$SETTINGS")"
+            $DRY_RUN_CMD echo "{\"blurredWallpaperLayer\": $DESIRED}" > "$SETTINGS"
+            SEEDED=1
+            [ -n "''${VERBOSE:-}" ] && echo "Cairn: seeded overview blur ($DESIRED) via new settings.json"
+          elif "$JQ" empty "$SETTINGS" >/dev/null 2>&1; then
+            # DMS not running, settings parseable: set the key outright
+            # (this is the one-time marker-gated seed, not a merge).
+            tmp=$(${pkgs.coreutils}/bin/mktemp)
+            if "$JQ" --argjson v "$DESIRED" '.blurredWallpaperLayer = $v' \
+              "$SETTINGS" > "$tmp" 2>/dev/null; then
+              $DRY_RUN_CMD ${pkgs.coreutils}/bin/mv "$tmp" "$SETTINGS"
+              SEEDED=1
+              [ -n "''${VERBOSE:-}" ] && echo "Cairn: seeded overview blur ($DESIRED) via jq"
+            else
+              ${pkgs.coreutils}/bin/rm -f "$tmp"
+            fi
+          fi
+          # Unparseable settings.json with DMS down, or IPC unavailable
+          # while DMS is up: SEEDED stays 0, no marker, retry next time.
+
+          if [ "$SEEDED" = "1" ]; then
+            $DRY_RUN_CMD mkdir -p "$(dirname "$MARKER")"
+            $DRY_RUN_CMD touch "$MARKER"
+          fi
+        fi
+
+        # Clean the orphaned baked-blur JPEG from the retired pipeline.
+        $DRY_RUN_CMD ${pkgs.coreutils}/bin/rm -f "$HOME/.cache/niri/overview-blur.jpg"
       '';
     }
 

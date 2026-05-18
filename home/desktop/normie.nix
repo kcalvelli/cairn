@@ -100,16 +100,8 @@
             "--all"
           ];
         }
-        # Blur wallpaper for overview mode
-        {
-          command = [
-            "swaybg"
-            "--mode"
-            "stretch"
-            "--image"
-            "${config.home.homeDirectory}/.cache/niri/overview-blur.jpg"
-          ];
-        }
+        # Overview blur: DMS-native backdrop (seeded via
+        # cairn.wallpapers.overviewBlur). No swaybg.
         # No cairn-help keybinding guide at startup
         # No drop-down terminal at startup
       ];
@@ -162,12 +154,9 @@
         "suspend"
       ];
 
-      layer-rules = [
-        {
-          matches = [ { namespace = "^wallpaper$"; } ];
-          place-within-backdrop = true;
-        }
-      ];
+      # Overview wallpaper backdrop placement is supplied by DMS's
+      # auto-generated dms/wpblur.kdl (namespace "dms:blurwallpaper"),
+      # already pulled in via includes.filesToInclude.
 
       window-rules = [
         {
