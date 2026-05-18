@@ -5,6 +5,25 @@ All notable changes to Cairn will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) (YYYY-MM-DD format).
 
+## [v2026.05.18] - 2026-05-18
+
+A small maintenance release. The overview-blur effect got handed back to DMS now that it does it natively, cairn-mail got a round of fixes and finished its rebrand, and a Cachix substituter means the next hipblaslt build won't eat an evening. No breaking changes — downstream configs need no updates.
+
+### Changed
+
+- **Overview blur is now DMS-native.** The old pipeline — ImageMagick baking a blurred JPEG on every wallpaper change, `swaybg` painting it, and a hand-written niri `layer-rule` to push it into the overview backdrop — is gone. DMS now renders its own `dms:blurwallpaper` shader-blurred backdrop and generates the `place-within-backdrop` rule itself (Cairn already pulled that include in via `wpblur`). A new `cairn.wallpapers.overviewBlur` option (bool, default `true`) seeds the DMS `blurredWallpaperLayer` setting exactly once via a marker sentinel, then hands ownership to the DMS GUI — toggle it off in DMS and it stays off across rebuilds. For the default case the behavior is unchanged: blur was on, blur stays on, just lighter (no ImageMagick, no `swaybg` process, no cached JPEG) and live-tracking instead of lagged behind a hook.
+
+  **One-time cost for existing live sessions:** the first rebuild after this lands flips the DMS setting live, and DMS's blur layer does not render correctly until the shell restarts. Log out and back in once; it is correct from then on and on every subsequent boot. Fresh installs are unaffected. This is deliberately not papered over by restarting the shell from a home-manager activation.
+
+### Fixed
+
+- **cairn-mail**: several fixes, plus the tail end of the `axios-ai-mail` → `cairn-mail` rebrand.
+
+### Infrastructure
+
+- Added the `nix-community` Cachix substituter so `hipblaslt` and friends come from cache instead of a ~10-hour local ROCm build.
+- Routine flake input updates.
+
 ## [v2026.05.01] - 2026-05-01
 
 A consolidation release. The distro got a real name, the local LLM stack got a sensible engine, the AI and browser firehose got shut off by default, and cairn-companion finally landed as a first-class module. After this, the intent is to slow down — fewer drive-by changes, more time to bake.
