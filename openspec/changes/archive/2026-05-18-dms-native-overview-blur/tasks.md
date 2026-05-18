@@ -83,6 +83,6 @@
 
 ## 5. Ship
 
-- [ ] 5.1 Commit with a message that isn't "update files", then **push**
+- [x] 5.1 Commit with a message that isn't "update files", then **push**
   (downstream rebuilds pull from origin — unpushed commits are
   invisible to the user's `nixos-rebuild`).
