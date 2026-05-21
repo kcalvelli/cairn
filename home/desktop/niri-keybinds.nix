@@ -125,6 +125,7 @@ let
     │ Mod + Shift + S   Screenshot with area selection (alternative)   │
     │ Mod + Ctrl + S    Screenshot screen to disk (alternative)        │
     │ Mod + Alt + S     Screenshot screen to clipboard (alternative)   │
+    │ Mod + Shift + Ctrl + S   Screenshot region to disk (grim+slurp) │
     └──────────────────────────────────────────────────────────────────┘
 
     ┌─ SCREEN RECORDING ───────────────────────────────────────────────┐
@@ -425,6 +426,18 @@ in
       write-to-disk = true;
     };
     "Mod+Alt+S".action.screenshot-screen = { };
+
+    # CAIRN: Region-to-disk screenshot (one-shot, no interactive UI)
+    "Mod+Shift+Ctrl+S".action.spawn = [
+      "${pkgs.bash}/bin/bash"
+      "-c"
+      ''
+        mkdir -p ~/Pictures/Screenshots
+        out=~/Pictures/Screenshots/Screenshot-from-$(date +%Y-%m-%d-%H-%M-%S).png
+        ${pkgs.grim}/bin/grim -g "$(${pkgs.slurp}/bin/slurp)" "$out" && \
+          ${pkgs.libnotify}/bin/notify-send "Screenshot saved" "$out" -i image-x-generic
+      ''
+    ];
 
     # --- CAIRN: Screen Recording ---
     # MOVED from Mod+Shift+R to Mod+Alt+R (was conflicting)
