@@ -120,8 +120,6 @@ A consolidation release. The distro got a real name, the local LLM stack got a s
 
 - **Logo assets**: Logo images removed from `README.md`. Cairn mark in `docs/` had a stray Gemini sparkle watermark scrubbed out.
 
-- **Discord** is now `vesktop` (native Wayland, working screen share, Material You theming, Vencord baked in).
-
 - **Starship prompt** configuration cleaned up.
 
 ### Fixed
@@ -178,7 +176,6 @@ After rebuilding, log out and back in for `LLAMA_API_URL` and `MCP_GATEWAY_URL` 
 ## [v2026.03.30] - 2026-03-30
 
 ### Changed
-- Replace Discord with `vesktop` for native Wayland, working screen share, and Material You theming.
 - Greeter group added for desktop users; `fprintd` added on laptop form factor.
 - DMS update with greeter and window-rules settings; flake inputs refreshed.
 
