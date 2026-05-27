@@ -16,7 +16,7 @@ Cairn now relies primarily on DMS's built-in template management system for appl
 - GTK applications
 - Terminal emulators (Ghostty is installed by default; DMS also supports kitty, foot, alacritty, wezterm)
 - Browsers (Firefox via pywalfox)
-- Other apps (vesktop, equibop, dgop, niri)
+- Other apps (dgop, niri)
 
 ## DankMaterialShell Features
 

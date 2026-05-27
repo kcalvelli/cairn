@@ -46,7 +46,7 @@ Browser installation is opt-in per channel. Only Brave stable defaults on; every
 
 | Application | Description | Why This App? |
 |-------------|-------------|---------------|
-| **Vesktop** | Discord client with native Wayland support | Working screen share on Wayland, Material You theming, Vencord plugins built in |
+| **Discord** | Official Discord client (cairn-packaged from upstream stable) | Latest stable ahead of nixpkgs, native Wayland via Ozone, no ToS-violating client mods |
 | **Materialgram** | Fast, secure messaging client | Native Qt app with encryption and cloud sync and material design - fork of Telegram Desktop |
 | **Spotify** | Music streaming service | Large library, good playlists, native Linux client |
 | **Ghostwriter** (KDE) | Distraction-free markdown editor | FOSS alternative to Typora with clean Qt interface |

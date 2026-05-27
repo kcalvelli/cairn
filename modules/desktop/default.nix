@@ -33,7 +33,7 @@ in
     };
 
     streaming = {
-      enable = lib.mkEnableOption "Streaming and broadcast tools (OBS, Vesktop)" // {
+      enable = lib.mkEnableOption "Streaming and broadcast tools (OBS, Discord)" // {
         default = true;
       };
     };
@@ -108,8 +108,7 @@ in
       ]
       # === Streaming (desktop.streaming.enable) ===
       ++ lib.optionals config.desktop.streaming.enable [
-        discord # Discord official client (overlay-pinned ahead of nixpkgs)
-        vesktop # Discord client (native Wayland screen sharing, DMS theming, Vencord)
+        discord # Discord official client (cairn-packaged, latest stable with native Wayland)
         # OBS with VA-API support for camera format conversion
         # Wrapped with gamemoderun for optimal performance
         (
