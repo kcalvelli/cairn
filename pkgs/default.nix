@@ -58,7 +58,27 @@ in
       name: prev.callPackage (pkgsDir + "/${name}") (packageArgs.${name} or { })
     )
     // {
-      openspec = inputs.openspec.packages.${prev.stdenv.hostPlatform.system}.default;
+      # Upstream OpenSpec (Fission-AI/OpenSpec) hardcodes nodejs_20 in its
+      # flake's nativeBuildInputs. nixpkgs flipped nodejs_20 to insecure once
+      # it hit upstream EOL, breaking evaluation. Swap it for nodejs_22 here
+      # until upstream bumps. Match by pname+major-version so we don't have to
+      # name nodejs_20 directly (which would itself trip the insecure check).
+      openspec =
+        let
+          base = inputs.openspec.packages.${prev.stdenv.hostPlatform.system}.default;
+        in
+        base.overrideAttrs (old: {
+          nativeBuildInputs = map (
+            p:
+            if
+              (p.pname or null) == "nodejs"
+              && lib.hasPrefix "20." (p.version or "")
+            then
+              prev.nodejs_22
+            else
+              p
+          ) old.nativeBuildInputs;
+        });
 
       # deno 2.7.13: tty_reset_mode_restores_termios test fails in nix sandbox
       # (no TTY available — assertion returns -16 instead of 0)
