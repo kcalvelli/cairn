@@ -108,6 +108,7 @@ in
       ]
       # === Streaming (desktop.streaming.enable) ===
       ++ lib.optionals config.desktop.streaming.enable [
+        discord # Discord official client (overlay-pinned ahead of nixpkgs)
         vesktop # Discord client (native Wayland screen sharing, DMS theming, Vencord)
         # OBS with VA-API support for camera format conversion
         # Wrapped with gamemoderun for optimal performance

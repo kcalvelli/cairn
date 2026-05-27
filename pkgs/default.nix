@@ -64,6 +64,16 @@ in
       # (no TTY available — assertion returns -16 instead of 0)
       deno = prev.deno.overrideAttrs { doCheck = false; };
 
+      # Discord stable, ahead of nixpkgs. Bump version + hash here when upstream ships.
+      # Latest URL: curl -sI 'https://discord.com/api/download?platform=linux&format=tar.gz' | grep -i location
+      discord = prev.discord.overrideAttrs (_old: rec {
+        version = "1.0.140";
+        src = prev.fetchurl {
+          url = "https://stable.dl2.discordapp.net/distro/app/stable/linux/x64/${version}/full.distro";
+          hash = "sha256-BJp6OoY5iMvEQ6D8tE01lD4o99kd64EPotZY6eEghI8=";
+        };
+      });
+
       # Broken Python package tests in current nixpkgs:
       # - cli-helpers: Pygments color code changes break style assertions
       # - fastmcp: test suite hangs indefinitely (async/network deadlock in sandbox)
