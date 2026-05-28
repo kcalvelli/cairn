@@ -92,11 +92,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777643743,
-        "narHash": "sha256-ZcD5tRh6xHJtarG7RFsTu6iIZ/fu2rR7T6K5KJszcFQ=",
+        "lastModified": 1779992121,
+        "narHash": "sha256-hEISgI3GwXQyHjBV7nUFAZYIabgRwI52oveLDrlLrAk=",
         "owner": "kcalvelli",
         "repo": "cairn-companion",
-        "rev": "8a30fda373e1226c69d85ed2d847939c560821cd",
+        "rev": "0b80c8630889526069f5d72282bf28455086a707",
         "type": "github"
       },
       "original": {
@@ -849,11 +849,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779938491,
-        "narHash": "sha256-khIekZCrhy3lQom4AZTmgBPV3DOFgAiopLUyUtbVGhY=",
+        "lastModified": 1779992051,
+        "narHash": "sha256-4YWGv/0NkAdtTW1MXfaLYpfC9BhpCy9k1pWkR0xI9uw=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "02f536e36eaee387594ce2a02d90ff678d056e0f",
+        "rev": "e93ad0df1073b2c969a8f0c1f10b84e870469d40",
         "type": "github"
       },
       "original": {
