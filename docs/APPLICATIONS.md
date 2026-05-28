@@ -28,7 +28,8 @@ Browser installation is opt-in per channel. Only Brave stable defaults on; every
 | **Brave (stable)** | `desktop.browsers.brave.enable` | `true` | The cairn default browser. |
 | **Brave Nightly** | `desktop.browsers.braveNightly.enable` | `false` | From the `brave-browser-previews` flake input. |
 | **Brave Beta** | `desktop.browsers.braveBeta.enable` | `false` | Same. |
-| **Brave Origin** | `desktop.browsers.braveOrigin.enable` | `false` | New experimental Brave channel. |
+| **Brave Origin Nightly** | `desktop.browsers.braveOriginNightly.enable` | `false` | Brave Origin (privacy/adblock/Shields without Rewards/Wallet/AI), nightly channel. |
+| **Brave Origin Beta** | `desktop.browsers.braveOriginBeta.enable` | `false` | Same as above, beta channel. |
 | **Google Chrome** | `desktop.browsers.chrome.enable` | `false` | For compatibility testing or Google account integration. |
 | **Chromium** | _(implicit)_ | n/a | Not installed as a standalone browser; remains the PWA backend with the GPU-aware command-line args plumbed in. |
 

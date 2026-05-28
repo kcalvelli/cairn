@@ -81,7 +81,8 @@ A consolidation release. The distro got a real name, the local LLM stack got a s
   desktop.browsers.brave.enable        = true;   # default
   desktop.browsers.braveNightly.enable = true;   # opt-in
   desktop.browsers.braveBeta.enable    = true;   # opt-in
-  desktop.browsers.braveOrigin.enable  = true;   # opt-in (new experimental Brave channel)
+  desktop.browsers.braveOriginNightly.enable = true;   # opt-in (Brave Origin nightly channel)
+  desktop.browsers.braveOriginBeta.enable    = true;   # opt-in (Brave Origin beta channel)
   desktop.browsers.chrome.enable       = true;   # opt-in
   ```
   Chromium is no longer installed as a standalone browser — it remains an implicit PWA backend with the GPU-aware command-line args plumbed in.

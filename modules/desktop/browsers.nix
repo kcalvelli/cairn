@@ -82,8 +82,11 @@ in
       braveBeta = {
         enable = lib.mkEnableOption "Brave Beta browser";
       };
-      braveOrigin = {
-        enable = lib.mkEnableOption "Brave Origin browser";
+      braveOriginNightly = {
+        enable = lib.mkEnableOption "Brave Origin Nightly browser";
+      };
+      braveOriginBeta = {
+        enable = lib.mkEnableOption "Brave Origin Beta browser";
       };
       chrome = {
         enable = lib.mkEnableOption "Google Chrome browser";
@@ -136,9 +139,18 @@ in
         };
       })
 
-      # Brave Origin (system module from brave-browser-previews flake)
-      (lib.mkIf browsers.braveOrigin.enable {
+      # Brave Origin Nightly (system module from brave-browser-previews flake)
+      (lib.mkIf browsers.braveOriginNightly.enable {
         programs.brave-origin-nightly = {
+          enable = true;
+          extensions = braveExtensionIds;
+          commandLineArgs = braveArgs;
+        };
+      })
+
+      # Brave Origin Beta (system module from brave-browser-previews flake)
+      (lib.mkIf browsers.braveOriginBeta.enable {
+        programs.brave-origin-beta = {
           enable = true;
           extensions = braveExtensionIds;
           commandLineArgs = braveArgs;

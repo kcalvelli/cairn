@@ -800,7 +800,8 @@ For per-user `services.cairn-companion.*` options, see the cairn-companion repos
 | `desktop.browsers.brave.enable` | bool | `true` | Brave stable (the cairn default browser) |
 | `desktop.browsers.braveNightly.enable` | bool | `false` | Brave Nightly channel |
 | `desktop.browsers.braveBeta.enable` | bool | `false` | Brave Beta channel |
-| `desktop.browsers.braveOrigin.enable` | bool | `false` | Brave Origin (experimental channel) |
+| `desktop.browsers.braveOriginNightly.enable` | bool | `false` | Brave Origin Nightly (Brave Origin = privacy/adblock without Rewards/Wallet/AI) |
+| `desktop.browsers.braveOriginBeta.enable` | bool | `false` | Brave Origin Beta channel |
 | `desktop.browsers.chrome.enable` | bool | `false` | Google Chrome |
 
 ---
