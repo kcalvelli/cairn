@@ -134,11 +134,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780334840,
-        "narHash": "sha256-eOmKTbq1nWVpyjU4C4a2qBLiPss6xnRceaLgfa0Zyns=",
+        "lastModified": 1780338219,
+        "narHash": "sha256-eHYgDZsh31merVdwbb47yeQ4miKffKM4hjuVd2nw0N8=",
         "owner": "kcalvelli",
         "repo": "cairn-mail",
-        "rev": "716019e52a1f0882bc77317bc42eca0ed5baa374",
+        "rev": "955410ca57805dcca66402283fc6679e0a5c28c3",
         "type": "github"
       },
       "original": {
@@ -731,11 +731,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1780030872,
-        "narHash": "sha256-u6WU/yd/o8iYQrHX3RAwO1hYa3LkoSL+WNQD0rJfJZQ=",
+        "lastModified": 1780246643,
+        "narHash": "sha256-4T1KWX7xWGQMs9hNZ24IOY3aYOi8D6+5WtkNRBSttB8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "e9a7635a57597d9754eccebdfc7045e6c8600e6b",
+        "rev": "3109eaae18e09d0b8aef23dc2579e7d94b8d4b4e",
         "type": "github"
       },
       "original": {
