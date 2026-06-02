@@ -134,11 +134,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780405127,
-        "narHash": "sha256-hGTHz9wbKMnvqPCbU2Cvj0RpcFeocJFPP0Ki2Gp2dmY=",
+        "lastModified": 1780417781,
+        "narHash": "sha256-m3YZKIwGbBMECUpmPzLWDGMr7tN+Ixh+PRksZqMuW8A=",
         "owner": "kcalvelli",
         "repo": "cairn-mail",
-        "rev": "1a3f69862e63c8a427fda99e0af02533775497a4",
+        "rev": "fc5d47d85c5d7ef1c9dd3ea4d86c9841a27860a1",
         "type": "github"
       },
       "original": {
@@ -537,11 +537,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780405249,
-        "narHash": "sha256-Al/9YJevtLjjuo1qaZDBDLcxn4/yBmkBsML0Rot+bZk=",
+        "lastModified": 1780408569,
+        "narHash": "sha256-s7Tv6FUQThRAvW8En8XVC6HMb0uiikzVccCcCo9u/Bg=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "07c723c3fe06c8e24d76882184e8bdee0073ba34",
+        "rev": "f384af1bec6423a0d4ba1855917ab948f64e5808",
         "type": "github"
       },
       "original": {
@@ -1067,11 +1067,11 @@
         "systems": "systems_7"
       },
       "locked": {
-        "lastModified": 1780323358,
-        "narHash": "sha256-iK4P0ZYOb3D4S8DqvWUivGfjoMjZnAQEc5Kr5crIDBc=",
+        "lastModified": 1780407228,
+        "narHash": "sha256-xrHtkdZGxLxOvwmfxjXH7wl2texm8v7p0GdxbIcshGE=",
         "owner": "mitchellh",
         "repo": "zig-overlay",
-        "rev": "22d713bdaec64681e56f5b69289789e3dd5430e0",
+        "rev": "10a041e5bfd7e537e803db9d4ff880b2ddcc92de",
         "type": "github"
       },
       "original": {
