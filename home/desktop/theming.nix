@@ -56,6 +56,13 @@ in
       settings = {
         "org/gnome/desktop/interface" = {
           "color-scheme" = "prefer-dark";
+          # Pin middle-click (primary selection) paste ON for GTK apps.
+          # The schema default is true, but it can get written to false in
+          # dconf out-of-band (theming passes, stray gsettings writes) and
+          # then silently kills middle-click paste across every GTK app.
+          # Declaring it here makes it stick across rebuilds. GTK reads this
+          # via xdg-desktop-portal; running apps pick it up on next launch.
+          "gtk-enable-primary-paste" = true;
         };
       };
     };
