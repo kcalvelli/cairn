@@ -70,13 +70,7 @@ in
         base.overrideAttrs (old: {
           nativeBuildInputs = map (
             p:
-            if
-              (p.pname or null) == "nodejs"
-              && lib.hasPrefix "20." (p.version or "")
-            then
-              prev.nodejs_22
-            else
-              p
+            if (p.pname or null) == "nodejs" && lib.hasPrefix "20." (p.version or "") then prev.nodejs_22 else p
           ) old.nativeBuildInputs;
         });
 

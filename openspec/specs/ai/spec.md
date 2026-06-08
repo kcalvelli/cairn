@@ -22,6 +22,10 @@ Integrates advanced AI agents and local inference capabilities into the develope
     - **Authentication**: Uses the upstream interactive login flow (`codex login`).
     - **Configuration**: MCP access is managed declaratively via `~/.codex/config.toml`, generated from `home/ai/mcp.nix` when OpenAI tooling and MCP are enabled.
     - `chatgpt` PWA: Standalone user-facing ChatGPT app available through the desktop/PWA workflow, outside the AI power-user stack.
+- **xAI Ecosystem**:
+    - `grok-cli`: Grok coding agent, exposing both the `grok` and `agent` entrypoints. Beta (alpha-channel) build, vendored as a pinned closed-source prebuilt binary in `pkgs/grok-cli` rather than via the upstream `curl | bash` installer.
+    - **Packaging**: A static-pie binary fetched from the `grok-build-public-artifacts` GCS bucket; no `autoPatchelfHook` required. Version + sha256 are pinned manually (no auto-update), and shell completions (bash/zsh/fish) are generated at build time.
+    - **Enablement**: Gated behind `services.ai.xai.enable` (off by default), alongside the `claude`/`gemini`/`openai` per-tool toggles.
 - **Workflow Tools**:
     - `openspec`: OpenSpec SDD workflow CLI for spec-driven development.
     - `whisper-cpp`: Speech-to-text.

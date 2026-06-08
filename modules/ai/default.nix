@@ -91,6 +91,10 @@ in
         };
       };
 
+      xai = {
+        enable = lib.mkEnableOption "Grok CLI (xAI)";
+      };
+
       # Unified system prompt
       systemPrompt = {
         enable = lib.mkEnableOption "unified system prompt for AI agents" // {
@@ -273,6 +277,10 @@ in
         ]
         ++ lib.optionals (cfg.openai.enable && cfg.openai.codexAcp.enable) [
           codex-acp
+        ]
+        # Grok CLI (conditional on services.ai.xai.enable)
+        ++ lib.optionals cfg.xai.enable [
+          grok-cli # xAI - grok / agent, beta channel, cairn-packaged
         ]
         # Workflow tools (conditional on services.ai.workflow.enable)
         ++ lib.optionals cfg.workflow.enable [
