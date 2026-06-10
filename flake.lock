@@ -92,11 +92,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1781107715,
-        "narHash": "sha256-o/UmVOnsk1GXr+RjcO2w8L/0BqePGnxWq23dGBFoajs=",
+        "lastModified": 1781111531,
+        "narHash": "sha256-JPsYlU7cbgQD7BEgvqva3aZc35yBCjoCp7Jx0ltErvM=",
         "owner": "kcalvelli",
         "repo": "cairn-companion",
-        "rev": "3d57d84c72aa8f4bf999975f5d79bc8539fdc21c",
+        "rev": "dd3866f1df994d2bb857aff34c7fa164e13893a1",
         "type": "github"
       },
       "original": {
@@ -252,11 +252,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1781058847,
-        "narHash": "sha256-/ZgQIR49eJWJaTOAh0IajKv5lzIk7mfP6mWuRu8rmp8=",
+        "lastModified": 1781111393,
+        "narHash": "sha256-fGGW+dvhD8kVQQVLLFHMPxfDod09JZtvIFyko+umTiA=",
         "owner": "AvengeMedia",
         "repo": "dms-plugin-registry",
-        "rev": "20521574c40bed30059c112db2e211b20bcddf54",
+        "rev": "fb494744ecb8fee11fd74ac5ee3888797e241205",
         "type": "github"
       },
       "original": {
