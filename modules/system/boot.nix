@@ -89,8 +89,6 @@
         pkiBundle = "/var/lib/sbctl";
       };
 
-      bootspec.enable = true;
-
       # Enable systemd but keep it quiet
       initrd = {
         systemd.enable = true;
