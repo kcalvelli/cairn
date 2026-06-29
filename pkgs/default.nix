@@ -58,20 +58,38 @@ in
       name: prev.callPackage (pkgsDir + "/${name}") (packageArgs.${name} or { })
     )
     // {
-      # Upstream OpenSpec (Fission-AI/OpenSpec) hardcodes nodejs_20 in its
-      # flake's nativeBuildInputs. nixpkgs flipped nodejs_20 to insecure once
-      # it hit upstream EOL, breaking evaluation. Swap it for nodejs_22 here
-      # until upstream bumps. Match by pname+major-version so we don't have to
-      # name nodejs_20 directly (which would itself trip the insecure check).
+      # Upstream OpenSpec (Fission-AI/OpenSpec) hardcodes nodejs_20 and pnpm_9
+      # in its flake. nixpkgs flips each to insecure once it hits upstream EOL
+      # (nodejs_20) or accumulates CVEs (pnpm-9.15.9), breaking evaluation. Swap
+      # them for non-insecure versions here until upstream bumps. Match by
+      # pname+major-version so we never name the insecure package directly
+      # (which would itself trip the insecure check).
+      #
+      # pnpm also feeds the pnpmDeps fixed-output derivation, so we rebuild that
+      # with the swapped pnpm and pin its hash here. lockfileVersion 9.0 is read
+      # by both pnpm 9 and 10, so the swap is safe. NOTE: this hash must be
+      # re-pinned whenever OpenSpec bumps its pnpm-lock.yaml.
       openspec =
         let
           base = inputs.openspec.packages.${prev.stdenv.hostPlatform.system}.default;
+          pnpm = prev.pnpm_10;
+          swap =
+            p:
+            if (p.pname or null) == "nodejs" && lib.hasPrefix "20." (p.version or "") then
+              prev.nodejs_22
+            else if (p.pname or null) == "pnpm" && lib.hasPrefix "9." (p.version or "") then
+              pnpm
+            else
+              p;
         in
         base.overrideAttrs (old: {
-          nativeBuildInputs = map (
-            p:
-            if (p.pname or null) == "nodejs" && lib.hasPrefix "20." (p.version or "") then prev.nodejs_22 else p
-          ) old.nativeBuildInputs;
+          nativeBuildInputs = map swap old.nativeBuildInputs;
+          pnpmDeps = prev.fetchPnpmDeps {
+            inherit (old) pname version src;
+            inherit pnpm;
+            fetcherVersion = 3;
+            hash = "sha256-OUY6G8e6Xqi+0YCcDbpVF06V9pJc68jSSA9rtNg/Vrg=";
+          };
         });
 
       # deno 2.7.13: tty_reset_mode_restores_termios test fails in nix sandbox
