@@ -228,7 +228,9 @@
         {
           matches = [
             {
-              app-id = "^org.quickshell$";
+              # DMS 0.0.x renamed its Quickshell window from org.quickshell
+              # to com.danklinux.dms. Dots escaped per the Nautilus rule below.
+              app-id = "^com\\.danklinux\\.dms$";
               title = "^Settings$";
             }
           ];
