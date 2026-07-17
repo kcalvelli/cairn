@@ -254,7 +254,6 @@ let
         inputs.dankMaterialShell.nixosModules.greeter
         inputs.home-manager.nixosModules.home-manager
         inputs.lanzaboote.nixosModules.lanzaboote
-        inputs.vscode-server.nixosModules.default
         # Standalone project modules (like cairn-mail pattern)
         inputs.mcp-gateway.nixosModules.default
       ];

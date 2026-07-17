@@ -47,11 +47,6 @@
       };
     };
 
-    vscode-server = {
-      url = "github:nix-community/nixos-vscode-server";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # For dev shells
     "zig-overlay" = {
       url = "github:mitchellh/zig-overlay";

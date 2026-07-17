@@ -54,7 +54,6 @@
     # === Development Services ===
     services = {
       lorri.enable = true;
-      vscode-server.enable = true;
     };
 
     # === Development Programs ===
