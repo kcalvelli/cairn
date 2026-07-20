@@ -314,15 +314,11 @@
   '';
 
   # Desktop services
-  services.gnome-keyring = {
-    enable = true;
-    components = [
-      "pkcs11"
-      "secrets"
-      "ssh"
-    ];
-  };
-
+  # NOTE: gnome-keyring is started + unlocked by PAM at login (see
+  # modules/desktop: security.pam.services.{greetd,login}.enableGnomeKeyring).
+  # Do NOT also enable home-manager's services.gnome-keyring here — it spawns a
+  # second daemon that can't auto-unlock and races the PAM one for the Secret
+  # Service. PAM or the service, never both.
   services.kdeconnect = {
     enable = true;
     indicator = false;
