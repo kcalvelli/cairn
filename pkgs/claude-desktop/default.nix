@@ -159,10 +159,17 @@ stdenv.mkDerivation {
     #   * ozone-platform-hint=auto = Wayland when there's a compositor, X11
     #     otherwise. Beats the old hard-forced --ozone-platform=wayland that
     #     left a blank window under X.
+    #   * password-store=gnome-libsecret forces the libsecret backend. Chromium
+    #     otherwise auto-detects the keyring from XDG_CURRENT_DESKTOP, and on a
+    #     tiling compositor like niri that value ("niri") is unrecognised, so it
+    #     silently falls back to the plaintext "basic" store — which makes
+    #     Claude refuse to persist the login ("sign-in won't be saved"). We ship
+    #     niri + gnome-keyring, so pin the backend explicitly.
     makeWrapper $out/lib/claude-desktop/claude-desktop $out/bin/claude-desktop \
       --set CHROME_DEVEL_SANDBOX /run/wrappers/bin/__chromium-suid-sandbox \
       --add-flags "--enable-features=UseOzonePlatform,WaylandWindowDecorations" \
-      --add-flags "--ozone-platform-hint=auto"
+      --add-flags "--ozone-platform-hint=auto" \
+      --add-flags "--password-store=gnome-libsecret"
 
     # Desktop entry + icons ship correct in the .deb (right app_id, desktop
     # actions, com.anthropic.Claude WM class). Take them as-is; only fix the
