@@ -258,7 +258,7 @@ in
         # Claude Code (conditional on services.ai.claude.enable)
         ++ lib.optionals cfg.claude.enable [
           claude-code # Anthropic - MCP support, deep integration
-          claude-desktop # Nix packaging of claude desktop for debian
+          claude-desktop # Anthropic's official native Linux build (cairn-packaged)
           claude-code-router # Claude Code request router
           claude-monitor # Real-time Claude Code usage monitoring
           # VSCode extension compatibility: claude-code symlink
@@ -287,6 +287,14 @@ in
           spec-kit # Spec-driven development framework
           openspec # OpenSpec CLI tool for SDD workflow
         ];
+    })
+
+    # Claude Desktop is Electron; its bundled chrome-sandbox can't be setuid
+    # from the nix store, so give it NixOS's setuid sandbox helper and keep the
+    # renderer sandbox ON. The package wrapper points CHROME_DEVEL_SANDBOX at
+    # /run/wrappers/bin/__chromium-suid-sandbox, which this provides.
+    (lib.mkIf (cfg.enable && cfg.claude.enable) {
+      security.chromiumSuidSandbox.enable = lib.mkDefault true;
     })
 
     # Shared local LLM packages (both server and client roles)
