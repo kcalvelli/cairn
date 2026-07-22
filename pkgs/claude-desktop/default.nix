@@ -165,8 +165,18 @@ stdenv.mkDerivation {
     #     silently falls back to the plaintext "basic" store — which makes
     #     Claude refuse to persist the login ("sign-in won't be saved"). We ship
     #     niri + gnome-keyring, so pin the backend explicitly.
+    #   * LD_LIBRARY_PATH carries libsecret. Chromium doesn't LINK libsecret — it
+    #     dlopen("libsecret-1.so.0")s it at runtime once the gnome-libsecret
+    #     backend is chosen. autoPatchelf only fixes NEEDED libs, and glibc
+    #     doesn't consult DT_RUNPATH for dlopen, so on NixOS the bare soname
+    #     resolves to nothing: backend=gnome_libsecret yet
+    #     isEncryptionAvailable=false → safeStorage dead → login won't persist.
+    #     Putting libsecret on LD_LIBRARY_PATH is what actually makes the dlopen
+    #     land. THIS is the fix for the relogin loop; the flag above only selects
+    #     the backend, it can't load the library.
     makeWrapper $out/lib/claude-desktop/claude-desktop $out/bin/claude-desktop \
       --set CHROME_DEVEL_SANDBOX /run/wrappers/bin/__chromium-suid-sandbox \
+      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libsecret ]} \
       --add-flags "--enable-features=UseOzonePlatform,WaylandWindowDecorations" \
       --add-flags "--ozone-platform-hint=auto" \
       --add-flags "--password-store=gnome-libsecret"
