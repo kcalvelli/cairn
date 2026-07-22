@@ -336,6 +336,10 @@
       "x-scheme-handler/https" = "brave-browser.desktop";
       "x-scheme-handler/about" = "brave-browser.desktop";
       "x-scheme-handler/unknown" = "brave-browser.desktop";
+      # Claude Desktop can't self-register claude:// on a declarative system
+      # (mimeapps.list is a read-only store symlink); declare it so the OAuth
+      # login callback routes back to the app instead of "No Apps Available".
+      "x-scheme-handler/claude" = "com.anthropic.Claude.desktop";
       "text/html" = "brave-browser.desktop";
       "application/xhtml+xml" = "brave-browser.desktop";
       "text/plain" = "org.xfce.mousepad.desktop";

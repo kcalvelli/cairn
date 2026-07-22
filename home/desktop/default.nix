@@ -150,6 +150,13 @@
       "text/html" = "brave-browser.desktop";
       "application/xhtml+xml" = "brave-browser.desktop";
 
+      # === Claude Desktop deep-link (OAuth callback) ===
+      # Claude Desktop tries to self-register this handler at runtime, but on a
+      # declarative system ~/.config/mimeapps.list is a read-only store symlink,
+      # so its write fails and the browser's claude:// login callback lands on
+      # "No Apps Available". Declare it here so the callback routes to the app.
+      "x-scheme-handler/claude" = "com.anthropic.Claude.desktop";
+
       # === Text Editor (Mousepad) ===
       "text/plain" = "org.xfce.mousepad.desktop";
       "text/x-csrc" = "org.xfce.mousepad.desktop";
