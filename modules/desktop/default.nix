@@ -189,6 +189,9 @@ in
       compositor.name = "niri";
       # Use first admin user's home for greeter config
       configHome = "/home/${firstAdmin}";
+      # Pin the same quickshell as DMS so the greeter and the live shell
+      # run the identical binary — one build in the closure, no version skew.
+      quickshell.package = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
     };
 
     # GNOME Keyring for credentials (PAM configuration)
