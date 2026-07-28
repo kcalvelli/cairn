@@ -251,7 +251,7 @@ let
       baseModules = [
         validationModule # Validate configuration first
         inputs.dankMaterialShell.nixosModules.dank-material-shell
-        inputs.dankMaterialShell.nixosModules.greeter
+        inputs.dank-greeter.nixosModules.default
         inputs.home-manager.nixosModules.home-manager
         inputs.lanzaboote.nixosModules.lanzaboote
         # Standalone project modules (like cairn-mail pattern)

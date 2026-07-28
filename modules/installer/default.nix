@@ -58,8 +58,9 @@ in
     programs.dank-material-shell = {
       enable = true;
       quickshell.package = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
-      greeter.enable = lib.mkForce false;
     };
+    # Live ISO auto-logins directly; keep the greeter off.
+    programs.dms-greeter.enable = lib.mkForce false;
 
     environment.sessionVariables = {
       XDG_CURRENT_DESKTOP = "niri";

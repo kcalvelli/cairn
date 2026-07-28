@@ -177,16 +177,18 @@ in
       ];
     };
 
-    # Enable DankMaterialShell with greeter
+    # Enable DankMaterialShell (greeter now lives in the dank-greeter module)
     programs.dank-material-shell = {
       enable = true; # Provides system packages (matugen, hyprpicker, cava, etc.)
       quickshell.package = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
-      greeter = {
-        enable = firstAdmin != null;
-        compositor.name = "niri";
-        # Use first admin user's home for greeter config
-        configHome = if firstAdmin != null then "/home/${firstAdmin}" else null;
-      };
+    };
+
+    # DMS greeter — split out of DankMaterialShell into its own repo
+    programs.dms-greeter = lib.mkIf (firstAdmin != null) {
+      enable = true;
+      compositor.name = "niri";
+      # Use first admin user's home for greeter config
+      configHome = "/home/${firstAdmin}";
     };
 
     # GNOME Keyring for credentials (PAM configuration)

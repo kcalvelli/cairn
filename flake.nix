@@ -68,6 +68,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Greeter split out of DankMaterialShell into its own repo
+    dank-greeter = {
+      url = "github:AvengeMedia/dank-greeter";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     dms-plugin-registry = {
       url = "github:AvengeMedia/dms-plugin-registry";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -289,7 +295,7 @@
           modules = [
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-graphical-base.nix"
             inputs.dankMaterialShell.nixosModules.dank-material-shell
-            inputs.dankMaterialShell.nixosModules.greeter
+            inputs.dank-greeter.nixosModules.default
             inputs.home-manager.nixosModules.home-manager
             self.nixosModules.installer
             {
