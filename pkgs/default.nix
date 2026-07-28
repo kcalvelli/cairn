@@ -88,7 +88,7 @@ in
             inherit (old) pname version src;
             inherit pnpm;
             fetcherVersion = 3;
-            hash = "sha256-OUY6G8e6Xqi+0YCcDbpVF06V9pJc68jSSA9rtNg/Vrg=";
+            hash = "sha256-QLJHP+Qu4PaHHVouvA/HZnsCMUwXf98XA7q/PwLdHbg=";
           };
         });
 
