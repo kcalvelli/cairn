@@ -759,26 +759,6 @@
         "type": "github"
       }
     },
-    "openspec": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1785463450,
-        "narHash": "sha256-Mn1Vfl/7GOcYLMpACQbwdz8GhAcdozavRG5aaFc1NBc=",
-        "owner": "Fission-AI",
-        "repo": "OpenSpec",
-        "rev": "45cca5db6137ed209117cc70510eb3e057fb981b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Fission-AI",
-        "repo": "OpenSpec",
-        "type": "github"
-      }
-    },
     "pre-commit": {
       "inputs": {
         "flake-compat": "flake-compat_2",
@@ -846,7 +826,6 @@
         "niri": "niri",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_2",
-        "openspec": "openspec",
         "quickshell": "quickshell",
         "rust-overlay": "rust-overlay",
         "systems": "systems_5",

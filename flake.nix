@@ -152,12 +152,6 @@
       url = "github:kcalvelli/cairn-companion";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    # OpenSpec - Spec-driven development CLI
-    openspec = {
-      url = "github:Fission-AI/OpenSpec";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   # Binary caches (niri) are configured declaratively in

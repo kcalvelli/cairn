@@ -58,39 +58,12 @@ in
       name: prev.callPackage (pkgsDir + "/${name}") (packageArgs.${name} or { })
     )
     // {
-      # Upstream OpenSpec (Fission-AI/OpenSpec) hardcodes nodejs_20 and pnpm_9
-      # in its flake. nixpkgs flips each to insecure once it hits upstream EOL
-      # (nodejs_20) or accumulates CVEs (pnpm-9.15.9), breaking evaluation. Swap
-      # them for non-insecure versions here until upstream bumps. Match by
-      # pname+major-version so we never name the insecure package directly
-      # (which would itself trip the insecure check).
-      #
-      # pnpm also feeds the pnpmDeps fixed-output derivation, so we rebuild that
-      # with the swapped pnpm and pin its hash here. lockfileVersion 9.0 is read
-      # by both pnpm 9 and 10, so the swap is safe. NOTE: this hash must be
-      # re-pinned whenever OpenSpec bumps its pnpm-lock.yaml.
-      openspec =
-        let
-          base = inputs.openspec.packages.${prev.stdenv.hostPlatform.system}.default;
-          pnpm = prev.pnpm_10;
-          swap =
-            p:
-            if (p.pname or null) == "nodejs" && lib.hasPrefix "20." (p.version or "") then
-              prev.nodejs_22
-            else if (p.pname or null) == "pnpm" && lib.hasPrefix "9." (p.version or "") then
-              pnpm
-            else
-              p;
-        in
-        base.overrideAttrs (old: {
-          nativeBuildInputs = map swap old.nativeBuildInputs;
-          pnpmDeps = prev.fetchPnpmDeps {
-            inherit (old) pname version src;
-            inherit pnpm;
-            fetcherVersion = 3;
-            hash = "sha256-riT2qV8FUKdF4PI7Zcw7nZw6ZR9u4/qpeDKZ5oFPuH4=";
-          };
-        });
+      # openspec: use nixpkgs' package directly (prev.openspec). We used to build
+      # the upstream OpenSpec flake and swap its EOL nodejs_20/pnpm_9 for
+      # non-insecure versions, re-pinning a pnpmDeps hash on every bump. nixpkgs
+      # now ships 1.7.0 on current nodejs_24/pnpm_10 — no insecure trip, no hash
+      # to chase. If you need to pin ahead of nixpkgs again, resurrect the flake
+      # input and the swap; git history has it.
 
       # deno 2.7.13: tty_reset_mode_restores_termios test fails in nix sandbox
       # (no TTY available — assertion returns -16 instead of 0)
