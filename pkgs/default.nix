@@ -96,50 +96,12 @@ in
       # (no TTY available — assertion returns -16 instead of 0)
       deno = prev.deno.overrideAttrs { doCheck = false; };
 
-      # nixpkgs' brave default.nix builds each flavor as
-      #   callPackage ./make-brave.nix { } (release // flavorData)
-      # That trailing application eats `.override` off the result, so
-      # home-manager's programs.brave (chromium.nix) dies with
-      # "attribute 'override' missing" the moment commandLineArgs is set —
-      # which cairn always does. make-brave.nix *does* accept commandLineArgs;
-      # the packaging just forgot to stay overridable. Rebuild the flavors the
-      # way upstream should have — makeOverridable over the callPackage args —
-      # so `.override { commandLineArgs = ...; }` works again. Delete this once
-      # nixpkgs' default.nix stops applying the release args non-overridably.
-      inherit
-        (
-          let
-            braveDir = "${prev.path}/pkgs/applications/networking/browsers/brave";
-            mk =
-              release: flavorData:
-              lib.makeOverridable (
-                args: prev.callPackage "${braveDir}/make-brave.nix" args (release // flavorData)
-              ) { };
-          in
-          {
-            brave = mk (import "${braveDir}/packages/brave.nix") {
-              optStem = "brave";
-              fileStem = "brave-browser";
-              appIdStem = "com.brave.Browser";
-              darwinStem = "Brave Browser";
-              changelogFile = "CHANGELOG_DESKTOP.md";
-              homepage = "https://brave.com/";
-              innerBinary = "brave";
-            };
-            brave-origin = mk (import "${braveDir}/packages/brave-origin.nix") {
-              optStem = "brave-origin";
-              fileStem = "brave-origin";
-              appIdStem = "com.brave.Origin";
-              darwinStem = "Brave Origin";
-              changelogFile = "CHANGELOG_DESKTOP_ORIGIN.md";
-              homepage = "https://brave.com/origin/";
-              innerBinary = "brave";
-            };
-          }
-        )
-        brave
-        brave-origin
-        ;
+      # NOTE: cairn used to rebuild brave/brave-origin here to restore `.override`
+      # on the flavors, because the old make-brave.nix applied the release args
+      # non-overridably. Upstream flipped make-brave.nix's two-stage order so the
+      # deps stage (which carries commandLineArgs) is the callPackage'd one — the
+      # flavors are overridable again on their own. The workaround is gone; if
+      # `programs.brave.commandLineArgs` ever breaks again, that's why.
 
       # claude-code: pin ahead of nixpkgs so the newest releases (Fable, etc.)
       # are available before they land upstream. nixpkgs builds claude-code from
