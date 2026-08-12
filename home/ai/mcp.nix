@@ -122,6 +122,13 @@ in
           enable = isAiServer;
           command = "${inputs.cairn-mail.packages.${system}.default}/bin/cairn-mail";
           args = [ "mcp" ];
+          env = {
+            # The cairn-mail API now requires a bearer token; the MCP server
+            # reads it from this file (owner keith, 0400) and attaches it to
+            # every API call. Only runs where isAiServer (the mail host), which
+            # is where /run/agenix/cairn-mail-token exists.
+            CAIRN_MAIL_TOKEN_FILE = "/run/agenix/cairn-mail-token";
+          };
         };
 
         mcp-dav = {

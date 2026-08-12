@@ -134,11 +134,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780419461,
-        "narHash": "sha256-CRIRJOUZbBZvuU92nig3ZEMLCFYw7FtRfmG5z9ode7w=",
+        "lastModified": 1786547120,
+        "narHash": "sha256-4zCM8UNPGzlloZbk3DSYUsboPUxkUqskyMQj70WpYt0=",
         "owner": "kcalvelli",
         "repo": "cairn-mail",
-        "rev": "c7f1af2f40246798285c83d80e802c762da7f490",
+        "rev": "1c3bf503748c52d3d4f81160e7bfdcd646b0df34",
         "type": "github"
       },
       "original": {
