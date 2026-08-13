@@ -8,6 +8,13 @@
 }:
 let
   firstAdmin = config.cairn.users.firstAdminUser;
+
+  # wf-recorder 0.6.0 (what nixpkgs pins) uses codec->sample_fmts in its audio
+  # path — ffmpeg removed that field in 7.1. Upstream master still hasn't ported
+  # the audio codec sample-format detection, so a source bump doesn't help; the
+  # only ffmpeg that still has the field is the 6.x series. Build against
+  # ffmpeg_6 (cached, no local rebuild) until upstream fixes the audio path.
+  wf-recorder = pkgs.wf-recorder.override { ffmpeg = pkgs.ffmpeg_6; };
 in
 {
   # Note: DMS NixOS modules are imported in lib/default.nix baseModules
