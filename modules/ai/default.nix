@@ -39,7 +39,7 @@ in
 {
   options = {
     services.ai = {
-      enable = lib.mkEnableOption "AI tools and services (claude-code, gemini-cli, codex)";
+      enable = lib.mkEnableOption "AI tools and services (claude-code, antigravity, codex)";
 
       mcp = {
         enable = lib.mkEnableOption "Model Context Protocol (MCP) server integration" // {
@@ -76,7 +76,7 @@ in
       };
 
       gemini = {
-        enable = lib.mkEnableOption "Gemini CLI";
+        enable = lib.mkEnableOption "Antigravity CLI (successor to the retired Gemini CLI)";
       };
 
       workflow = {
@@ -266,9 +266,9 @@ in
             exec ${claude-code}/bin/claude "$@"
           '')
         ]
-        # Gemini CLI (conditional on services.ai.gemini.enable)
+        # Antigravity CLI (conditional on services.ai.gemini.enable)
+        # Google retired gemini-cli and replaced it with Antigravity CLI.
         ++ lib.optionals cfg.gemini.enable [
-          gemini-cli-bin
           inputs.antigravity-nix.packages.x86_64-linux.default
         ]
         # OpenAI Codex (conditional on services.ai.openai.enable)
