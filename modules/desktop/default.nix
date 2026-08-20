@@ -14,7 +14,8 @@ let
   # the audio codec sample-format detection, so a source bump doesn't help; the
   # only ffmpeg that still has the field is the 6.x series. Build against
   # ffmpeg_6 (cached, no local rebuild) until upstream fixes the audio path.
-  wf-recorder = pkgs.wf-recorder.override { ffmpeg = pkgs.ffmpeg_6; };
+  # nixpkgs renamed the derivation arg ffmpeg -> ffmpeg_8, so override that.
+  wf-recorder = pkgs.wf-recorder.override { ffmpeg_8 = pkgs.ffmpeg_6; };
 in
 {
   # Note: DMS NixOS modules are imported in lib/default.nix baseModules
