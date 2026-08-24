@@ -67,8 +67,10 @@ in
       hardware = {
         # Logitech Unifying receiver support
         logitech.wireless.enable = true;
-        logitech.wireless.enableGraphical = true;
       };
+
+      # Solaar GUI (was hardware.logitech.wireless.enableGraphical, renamed upstream)
+      programs.solaar.enable = true;
 
       # Additional udev rules for Logitech device access via plugdev group
       services.udev.extraRules = ''

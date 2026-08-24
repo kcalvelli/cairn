@@ -533,7 +533,7 @@
 
   # Solaar autostart for Logitech Unifying devices (hardware-conditional)
   home.file.".config/autostart/solaar.desktop" =
-    lib.mkIf (osConfig.hardware.logitech.wireless.enableGraphical or false)
+    lib.mkIf (osConfig.programs.solaar.enable or false)
       {
         enable = true;
         force = true;

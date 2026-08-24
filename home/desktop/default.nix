@@ -369,9 +369,9 @@
   };
 
   # Solaar autostart for Logitech Unifying devices (hardware-conditional)
-  # Solaar is installed by the system via hardware.logitech.wireless.enableGraphical
+  # Solaar is installed by the system via programs.solaar.enable
   home.file.".config/autostart/solaar.desktop" =
-    lib.mkIf (osConfig.hardware.logitech.wireless.enableGraphical or false)
+    lib.mkIf (osConfig.programs.solaar.enable or false)
       {
         enable = true;
         force = true;
