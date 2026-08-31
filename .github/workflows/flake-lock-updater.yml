@@ -54,6 +54,7 @@ jobs:
           nix flake metadata
       
       - name: Create Pull Request
+        id: cpr
         if: steps.update.outputs.updated == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
@@ -61,44 +62,31 @@ jobs:
           commit-message: "chore: update flake.lock"
           title: "chore: update flake.lock"
           body: |
-            Automated flake.lock update
-            
-            ## ✅ CI Validation
-            - ✅ Flake structure validated (`nix flake check`)
-            
-            ## ⚠️ IMPORTANT: Manual Testing Required
-            
-            **CI does NOT test actual builds or NixOS modules.**
-            
-            You **MUST** run the validation script before merging:
-            
-            ```bash
-            cd ~/Projects/cairn
-            gh pr checkout ${{ github.event.pull_request.number }}
-            ./scripts/test-build.sh
-            ```
-            
-            The validation script:
-            - ✅ Tests flake structure
-            - ✅ Builds a real NixOS configuration
-            - ✅ Catches dependency conflicts (like niri/libdisplay-info)
-            - ✅ Tests with your actual system
-            
-            **Only merge if `./scripts/test-build.sh` passes.**
-            
+            Automated flake.lock update — cairn's own dev lock, not the fleet's.
+
+            ## What CI gates
+            - ✅ `nix flake check --all-systems` (structure)
+            - ✅ Example config toplevel build (dry-run)
+            - ✅ Formatting
+
+            Branch protection blocks merge until those pass, and this PR is set
+            to **auto-merge** on green. Cairn is a library: this lock only feeds
+            cairn's CI, examples, and devshells — it does not touch what edge /
+            mini / pangolin run. Those pin cairn downstream in nixos_config and
+            get updated there.
+
             ## What Changed
-            Review the flake.lock diff to see which inputs were updated.
-            Pay special attention to:
-            - Major version bumps in nixpkgs
-            - Updates to critical packages (niri, home-manager, etc.)
-            - Large numbers of input changes
-            
-            ## If Build Fails
-            - Check upstream GitHub issues for affected packages
-            - Wait for fixes before merging
-            - Test again with `./scripts/test-build.sh`
+            Review the flake.lock diff to see which inputs moved — watch nixpkgs
+            major bumps and critical packages (niri, home-manager). If green,
+            it merges itself. If CI goes red, it sits here until a human sorts it.
           branch: update_flake_lock_action
           delete-branch: true
           labels: |
             dependencies
             automated
+
+      - name: Enable auto-merge
+        if: steps.update.outputs.updated == 'true' && steps.cpr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --squash --auto "${{ steps.cpr.outputs.pull-request-number }}"

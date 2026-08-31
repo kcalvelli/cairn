@@ -56,6 +56,7 @@ jobs:
             in pkgs.claude-desktop'
 
       - name: Create Pull Request
+        id: cpr
         if: steps.update.outputs.updated == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
@@ -83,3 +84,9 @@ jobs:
           labels: |
             dependencies
             automated
+
+      - name: Enable auto-merge
+        if: steps.update.outputs.updated == 'true' && steps.cpr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --squash --auto "${{ steps.cpr.outputs.pull-request-number }}"
