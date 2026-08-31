@@ -370,24 +370,22 @@
 
   # Solaar autostart for Logitech Unifying devices (hardware-conditional)
   # Solaar is installed by the system via programs.solaar.enable
-  home.file.".config/autostart/solaar.desktop" =
-    lib.mkIf (osConfig.programs.solaar.enable or false)
-      {
-        enable = true;
-        force = true;
-        text = ''
-          [Desktop Entry]
-          Name=Solaar
-          Comment=Logitech Unifying Receiver peripherals manager
-          Exec=solaar --window=hide --battery-icons=solaar
-          Icon=solaar
-          StartupNotify=true
-          Terminal=false
-          Type=Application
-          Keywords=logitech;unifying;receiver;mouse;keyboard;
-          Categories=Utility;GTK;
-        '';
-      };
+  home.file.".config/autostart/solaar.desktop" = lib.mkIf (osConfig.programs.solaar.enable or false) {
+    enable = true;
+    force = true;
+    text = ''
+      [Desktop Entry]
+      Name=Solaar
+      Comment=Logitech Unifying Receiver peripherals manager
+      Exec=solaar --window=hide --battery-icons=solaar
+      Icon=solaar
+      StartupNotify=true
+      Terminal=false
+      Type=Application
+      Keywords=logitech;unifying;receiver;mouse;keyboard;
+      Categories=Utility;GTK;
+    '';
+  };
 
   # Flatpak Flathub setup
   # Add Flathub remote for user-level flatpak installations
