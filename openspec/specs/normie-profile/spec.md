@@ -20,7 +20,7 @@ Defines the "normie" home-manager profile — a ChromeOS-like desktop experience
 - **Implementation**: `home/desktop/niri-keybinds-normie.nix`
 - **Scope**: Minimal set of bindings for mouse-first users
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Normie profile provides ChromeOS-like desktop
 

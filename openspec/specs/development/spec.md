@@ -31,7 +31,7 @@ Provides a comprehensive development environment with modern tools, optimized sy
 - **Neovim Integration**: Devshells set `CAIRN_NVIM_LANGUAGES` to auto-configure IDE features.
 - **Implementation**: `devshells/`
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Database CLI Clients
 
