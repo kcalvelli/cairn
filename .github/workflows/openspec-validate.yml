@@ -1,0 +1,30 @@
+name: OpenSpec Validate
+
+# The hand-written specs drift out of the requirement/scenario schema over
+# time (requirements parked in the wrong section, stray ## ADDED headings,
+# specs with no requirements at all). This catches that on the PR instead of
+# months later. Runs on every PR — unfiltered — so it can be a required check
+# without a path filter silently blocking unrelated PRs.
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-specs:
+    name: Validate OpenSpec specs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Validate all specs
+        run: |
+          echo "📐 Validating OpenSpec specs..."
+          nix run nixpkgs#openspec -- validate --specs --no-interactive
