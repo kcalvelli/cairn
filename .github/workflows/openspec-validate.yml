@@ -24,7 +24,12 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
+      # Use cairn's OWN pinned openspec (.#openspec), not `nixpkgs#openspec`.
+      # The latter floated to the runner's registry and validated with a newer,
+      # stricter openspec than cairn ships — so specs passed locally and failed
+      # here. This pins CI to the same version your machines get; it moves when
+      # flake.lock moves.
       - name: Validate all specs
         run: |
           echo "📐 Validating OpenSpec specs..."
-          nix run nixpkgs#openspec -- validate --specs --no-interactive
+          nix run .#openspec -- validate --specs --no-interactive

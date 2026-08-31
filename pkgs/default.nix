@@ -29,8 +29,13 @@ in
   perSystem =
     { system, pkgs, ... }:
     {
-      # Automatically export all custom packages
-      packages = lib.genAttrs packageNames (name: pkgs.${name});
+      # Automatically export all custom packages, plus openspec so CI (and
+      # `nix run .#openspec`) validate specs with the SAME version cairn ships,
+      # not whatever floats into the runner's `nixpkgs#` registry. Kills the
+      # skew where a check goes green locally and red in CI.
+      packages = lib.genAttrs packageNames (name: pkgs.${name}) // {
+        openspec = pkgs.openspec;
+      };
 
       _module.args.pkgs = import inputs.nixpkgs {
         inherit system;

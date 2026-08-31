@@ -189,7 +189,7 @@ PWA applications (PIM, Immich, generic apps) SHALL be defined via a central `cai
 
 ### Requirement: File Manager Integration
 
-Dolphin is configured to use Ghostty as its terminal emulator, and KDE Activities (unused in Niri) are hidden from the UI.
+Dolphin SHALL be configured to use Ghostty as its terminal emulator, and KDE Activities (unused in Niri) SHALL be hidden from the UI.
 
 #### Scenario: User opens terminal from Dolphin context menu
 
@@ -207,7 +207,7 @@ Dolphin is configured to use Ghostty as its terminal emulator, and KDE Activitie
 
 ### Requirement: Flatpak Installation Handler
 
-Clicking "Install" on the Flathub website triggers a transparent, terminal-based installation flow.
+Clicking "Install" on the Flathub website SHALL trigger a transparent, terminal-based installation flow.
 
 #### Scenario: User installs app from Flathub
 
@@ -236,7 +236,7 @@ Clicking "Install" on the Flathub website triggers a transparent, terminal-based
 
 ### Requirement: Drop-down Terminal Identity
 
-The drop-down terminal uses a proper Cairn app-id and does not appear in the DMS dock.
+The drop-down terminal SHALL use a proper Cairn app-id and SHALL NOT appear in the DMS dock.
 
 #### Scenario: User toggles drop-down terminal
 
@@ -337,6 +337,8 @@ Hoppscotch SHALL be included as a default PWA in `pkgs/pwa-apps/pwa-defs.nix`, w
 
 ### Requirement: GStreamer is not included by default
 
+GStreamer SHALL NOT be included in the default package set.
+
 **Rationale**: GStreamer causes boot instability due to glib symbol mismatches and race conditions with PipeWire. Media playback uses mpv with FFmpeg decoding instead.
 
 #### Scenario: User needs GStreamer for specific Qt apps
@@ -362,7 +364,7 @@ Hoppscotch SHALL be included as a default PWA in `pkgs/pwa-apps/pwa-defs.nix`, w
 
 ### Requirement: SSD-Consistent Application Selection
 
-All primary desktop applications respect the compositor's `prefer-no-csd` setting. Brief utility windows (screenshot annotation, audio control) are exempt. The normie profile uses `prefer-no-csd = false`, so applications draw client-side decorations (titlebars with window controls).
+All primary desktop applications SHALL respect the compositor's `prefer-no-csd` setting. Brief utility windows (screenshot annotation, audio control) are exempt. The normie profile uses `prefer-no-csd = false`, so applications draw client-side decorations (titlebars with window controls).
 
 #### Scenario: User opens any default application (standard profile)
 
@@ -445,7 +447,7 @@ The init script SHALL prompt for each user's profile during user collection inst
 
 ### Requirement: Default Text Editor
 
-Mousepad serves as the default text editor, providing syntax highlighting and clean editing without IDE-weight features.
+Mousepad SHALL serve as the default text editor, providing syntax highlighting and clean editing without IDE-weight features.
 
 #### Scenario: User opens text editor via keybind
 
@@ -464,7 +466,7 @@ Mousepad serves as the default text editor, providing syntax highlighting and cl
 
 ### Requirement: GPU Resource Correlation Awareness
 
-Desktop session stability correlates with GPU memory state; Cairn documents this relationship to aid troubleshooting.
+Desktop session stability correlates with GPU memory state; Cairn SHALL document this relationship to aid troubleshooting.
 
 #### Scenario: Login after heavy LLM inference
 
