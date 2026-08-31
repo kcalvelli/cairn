@@ -57,12 +57,29 @@
       ntfs3g
 
       # System monitoring and information
-      pciutils
+      pciutils # lspci
+      usbutils # lsusb
       wirelesstools
+      ethtool
       btop
       htop
-      lm_sensors
-      smartmontools
+      lm_sensors # sensors
+      smartmontools # smartctl
+
+      # Diagnostics and crash forensics — the stuff you want already
+      # installed when a box falls over, not the stuff you go hunting
+      # for after it does.
+      lsof
+      psmisc # pstree
+      sysstat # iostat, mpstat, pidstat, sar
+      dmidecode # DIMM/board/BIOS inventory
+      dnsutils # dig, host, nslookup
+      ncdu
+      inxi
+      hwinfo
+      drm_info
+      mcelog # decode machine-check exceptions (CPU/RAM faults)
+      rasdaemon # ras-mc-ctl — ECC/memory error reporting
 
       # Archive and compression tools
       p7zip
