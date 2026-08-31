@@ -220,7 +220,7 @@ PIM module SHALL support multi-host Tailnet deployments via role-based configura
 
 ### Requirement: AI Module Dependency (Server Role Only)
 
-PIM server role REQUIRES the AI module to be enabled.
+PIM server role MUST have the AI module enabled.
 
 #### Scenario: Server role without AI
 
