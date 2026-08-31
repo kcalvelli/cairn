@@ -15,7 +15,8 @@ Defines the procedures for system installation, automated validation, and contin
 - **Flake Check**: Validates flake structure and buildable outputs.
 - **Formatting**: Enforces `nixfmt-rfc-style` on all Nix files.
 - **DevShell Builds**: Ensures all development shells remain buildable.
-- **Lock Updater**: Weekly automated dependency updates with PR generation.
+- **Dependency Updaters**: Automated PRs for `flake.lock` (weekly), the vendored `claude-code`/`claude-desktop` manifests (daily), and GitHub Action versions (Dependabot, weekly). Each PR enables auto-merge on creation.
+- **Branch Protection**: `master` requires the `Validate flake` and `Check Nix formatting` checks to pass. This is the merge gate — auto-merge lands a bot PR only when CI is green; anything red waits for a human.
 - **Implementation**: `.github/workflows/`
 
 ### Deployment Patterns
@@ -30,5 +31,5 @@ Defines the procedures for system installation, automated validation, and contin
     - **Tool**: `openspec` CLI.
     - **Workflow**: Create delta in `openspec/changes/`, update specs, implement, and archive.
 - **Formatting**: Always run `nix fmt .` before committing.
-- **Testing**: Use `./scripts/test-build.sh` for local validation of heavy changes.
+- **Testing**: For heavy changes, validate locally with `nix flake check --all-systems` and a real build of the example config (`cd examples/example-config && nix build .#nixosConfigurations.<host>.config.system.build.toplevel`). CI runs the same as a dry-run; the library's own `flake.lock` is not the fleet's, so downstream hosts get final validation on `nixos-rebuild`.
 - **Conventional Commits**: All PRs and commits should follow standard git conventions.
