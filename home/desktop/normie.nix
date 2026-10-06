@@ -56,7 +56,7 @@
       claudeCodeUsage.enable = osConfig.services.ai.enable or false;
 
       # Conditional on networking
-      tailscale.enable = osConfig.services.tailscale.enable or false;
+      dankscale.enable = osConfig.services.tailscale.enable or false;
 
       # Conditional on virtualisation
       dockerManager.enable = osConfig.virt.enable or false;
