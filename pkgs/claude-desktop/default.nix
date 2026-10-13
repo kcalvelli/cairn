@@ -32,6 +32,7 @@
   nspr,
   nss,
   pango,
+  pipewire,
   systemd,
   # X11 stack
   libX11,
@@ -105,6 +106,7 @@ stdenv.mkDerivation {
     nspr
     nss
     pango
+    pipewire # claude-native-binding.node links libpipewire since 2.31226
     systemd
     libX11
     libXScrnSaver
