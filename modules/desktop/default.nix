@@ -143,6 +143,7 @@ in
       # === Social (desktop.social.enable) ===
       ++ lib.optionals config.desktop.social.enable [
         materialgram # Messaging client
+        signal-desktop # Signal (no web client exists, so no PWA option)
         spotify # Music streaming
         zenity # File dialogs (required for Spotify local files)
       ];
