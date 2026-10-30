@@ -62,7 +62,6 @@
       dockerManager.enable = osConfig.virt.enable or false;
 
       # Conditional on laptop form factor
-      dankBatteryAlerts.enable = osConfig.hardware.laptop.enable or false;
       powerUsagePlugin.enable = osConfig.hardware.laptop.enable or false;
 
       # Explicitly disabled (cairn-monitor provides this)

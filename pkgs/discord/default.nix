@@ -51,7 +51,6 @@
   systemdLibs,
   libappindicator-gtk3,
   libdbusmenu,
-  libunity,
   pipewire,
   speechd-minimal,
   wayland,
@@ -125,7 +124,6 @@ let
     libglvnd
     libnotify
     libpulseaudio
-    libunity
     libuuid
     libva
     libx11
