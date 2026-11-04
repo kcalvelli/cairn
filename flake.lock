@@ -151,11 +151,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1776272223,
-        "narHash": "sha256-3NKtDYbBFi6LNjczvQjzr74MgMpiDOELlRxRFqOU6Yo=",
+        "lastModified": 1793831521,
+        "narHash": "sha256-40r7xiznijO5OQMD5L3ANs5hkWElJO6vO5K8RAZuY3Q=",
         "owner": "kcalvelli",
         "repo": "cairn-monitor",
-        "rev": "936ad5a898a6d4883c044424fd43a9cfc2e103cb",
+        "rev": "7702380ac20d16b57749b5388bbe709600e7684c",
         "type": "github"
       },
       "original": {
