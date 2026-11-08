@@ -58,7 +58,7 @@ in
 
   # Automatically generate overlay from all package directories
   flake.overlays.default =
-    _final: prev:
+    final: prev:
     lib.genAttrs packageNames (
       name: prev.callPackage (pkgsDir + "/${name}") (packageArgs.${name} or { })
     )
@@ -73,6 +73,13 @@ in
       # deno 2.7.13: tty_reset_mode_restores_termios test fails in nix sandbox
       # (no TTY available — assertion returns -16 instead of 0)
       deno = prev.deno.overrideAttrs { doCheck = false; };
+
+      # brave: nixpkgs dropped it (no committer among its maintainers to unblock
+      # security fixes). brave-browser-previews already repackages the upstream
+      # .debs for the preview channels, so stable moved in there too. Pulled
+      # through cairn's overlay so pkgs.brave exists everywhere — system, HM,
+      # PWAs, the installer ISO — not just where the desktop module is imported.
+      inherit (inputs.brave-browser-previews.overlays.default final prev) brave;
 
       # NOTE: cairn used to rebuild brave/brave-origin here to restore `.override`
       # on the flavors, because the old make-brave.nix applied the release args
