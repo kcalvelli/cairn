@@ -70,17 +70,28 @@ let
     lib.mapAttrs (_: mod: { installedVersion = mod.version; }) source.modules
   );
 
-  # At first launch for a given version, symlink the vendored modules from
-  # the nix store into Discord's per-version module directory and write
-  # installed.json so the updater treats them as already-current.
+  # Symlink the vendored modules from the nix store into Discord's
+  # per-version module directory and write installed.json so the updater
+  # treats them as already-current.
+  #
+  # The links are repointed on EVERY launch, not just the first. A rebuild
+  # of the same Discord version gets a new store hash, the old links keep
+  # pointing at the previous one, and the next GC turns them into dangling
+  # garbage -> "Cannot find module 'discord_desktop_core'" and a silent quit.
+  # Only symlinks and missing entries are touched; if Discord's own updater
+  # ever unpacks a real directory there, it owns it.
   stageModules = writeShellScript "discord-stage-modules" ''
     store_modules="$1"
     modules_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/discord/${source.version}/modules"
+    mkdir -p "$modules_dir"
+    for m in ${lib.concatStringsSep " " (lib.attrNames moduleSrcs)}; do
+      target="$store_modules/$m"
+      link="$modules_dir/$m"
+      if [ -L "$link" ] || [ ! -e "$link" ]; then
+        [ "$(readlink "$link" 2>/dev/null)" = "$target" ] || ln -sfn "$target" "$link"
+      fi
+    done
     if [ ! -f "$modules_dir/installed.json" ]; then
-      mkdir -p "$modules_dir"
-      for m in ${lib.concatStringsSep " " (lib.attrNames moduleSrcs)}; do
-        ln -sfn "$store_modules/$m" "$modules_dir/$m"
-      done
       printf '%s\n' '${installedJson}' > "$modules_dir/installed.json"
     fi
   '';
