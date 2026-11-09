@@ -138,7 +138,13 @@ Both profiles' `spawn-at-startup` entry for `dbus-update-activation-environment 
 
 ### D9: Client is Remmina, wrapped by `cairn-remote`
 
-Remmina is GTK3 and runs natively on Wayland. When it grabs the keyboard, niri honours keyboard-shortcuts-inhibit, so `Mod` combos reach the remote niri instead of the local one. TigerVNC's viewer goes through XWayland and can't inhibit. `cairn-remote` builds a `vnc://user@host:port` URI and runs `remmina -c`.
+Remmina is GTK3 and runs natively on Wayland. When it grabs the keyboard, niri honours keyboard-shortcuts-inhibit, so `Mod` combos reach the remote niri instead of the local one. TigerVNC's viewer goes through XWayland and can't inhibit. This was verified from edge (local niri) into mini.
+
+**Deployment finding:** Remmina asks for the X.509 CA file and then the credentials *inside* the VNC handshake, and neatvnc kills any handshake after 30 s (`HANDSHAKE_TIMEOUT`, hardcoded). Every attempt timed out before a password was ever sent. So `cairn-remote` does the trust itself: it fetches the server cert with a minimal VeNCrypt/X509Plain handshake (bailing before credentials), pins it TOFU-style per `host-port` (confirmation needs a terminal, and a mismatch is a hard refusal), then writes a Remmina profile with `cacert`, `username` and `keyboard_grab=1` and launches it. Only the password prompt is left inside the 30 s.
+
+### D10: Port directory
+
+Clients only know the users defined on *their* machine (edge only has keith), but any user should be reachable on any host. Each serving host publishes `<user> <port>` lines on a tailnet-only, socket-activated `Accept=yes` port (`directoryPort`, default 5899; libvirt's VNC consoles start at 5900). `cairn-remote` asks the host first and falls back to its local table. It contains only names and ports, which are not secret on a tailnet.
 
 ## Risks / Trade-offs
 

@@ -113,16 +113,45 @@ The headless session's display resolution SHALL be configurable per host. It SHA
 - **THEN** the remote session's output is 2560x1440
 
 ### Requirement: Client launcher
-When `cairn.remoteDesktop.client.enable` is true, the host SHALL provide a graphical VNC client and a `cairn-remote <host> [--user <name>] [--port <port>]` command. The command SHALL default to the invoking user and that user's declared port.
+When `cairn.remoteDesktop.client.enable` is true, the host SHALL provide a graphical VNC client and a `cairn-remote <host> [--user <name>] [--port <port>]` command. The command SHALL default to the invoking user, and SHALL resolve the port from the target host's directory first and the local user table second.
 
 #### Scenario: Connect to own session
 - **WHEN** user U runs `cairn-remote mini` on a client host
-- **THEN** a VNC client opens a connection to `mini` on U's declared remote-desktop port as user U
+- **THEN** a VNC client opens a connection to `mini` on U's remote-desktop port as user U
 
-#### Scenario: Connect as another user
-- **WHEN** a user runs `cairn-remote edge --user libby`
-- **THEN** the client connects to `edge` on libby's declared port and asks for libby's credentials
+#### Scenario: Connect as a user the client machine doesn't define
+- **WHEN** a user on edge, which only defines keith, runs `cairn-remote mini --user libby`
+- **THEN** the port comes from mini's directory, and the client asks for libby's password
 
 #### Scenario: Unknown user port
-- **WHEN** `--user` names a user with no declared port and no `--port` is given
+- **WHEN** neither the host's directory nor the local table knows the user, and no `--port` is given
 - **THEN** the command exits non-zero and says which flag to pass
+
+### Requirement: Port directory
+A serving host SHALL publish, on a tailnet-only port (`cairn.remoteDesktop.directoryPort`, default 5899), a plain-text list of each served user and their port, one `<user> <port>` per line. It MUST NOT contain anything else.
+
+#### Scenario: Directory lists served users
+- **WHEN** a tailnet client connects to the directory port of a host serving alice (5901) and bob (5902)
+- **THEN** it receives `alice 5901` and `bob 5902` and the connection closes
+
+### Requirement: Trust on first use for the server certificate
+`cairn-remote` SHALL pin each host and port's certificate on first use after showing its SHA-256 fingerprint and getting explicit confirmation in a terminal. It SHALL refuse to connect if a later connection presents a different certificate, and it SHALL hand the pinned certificate and username to the VNC client so that only the password is prompted.
+
+#### Scenario: First connection
+- **WHEN** a user connects to a host and port for the first time from a terminal
+- **THEN** the fingerprint is shown, and the certificate is pinned only after the user confirms
+
+#### Scenario: First connection without a terminal
+- **WHEN** the first connection is made without a terminal
+- **THEN** the command shows the fingerprint, refuses, and says to run it once from a terminal
+
+#### Scenario: Certificate changed
+- **WHEN** a pinned host presents a different certificate
+- **THEN** the command refuses, shows both fingerprints, and says how to re-pin deliberately
+
+### Requirement: Any user, active session or not
+A user SHALL be able to start a remote session whether or not they're logged in at the host. A user who is logged in locally SHALL get an isolated remote session alongside the local one.
+
+#### Scenario: Traci is logged in at mini
+- **WHEN** someone connects to traci's port on mini with traci's credentials while traci is logged in at mini's display
+- **THEN** a separate isolated session for traci is presented, and traci's local session keeps running untouched

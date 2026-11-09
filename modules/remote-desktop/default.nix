@@ -297,13 +297,104 @@ let
 
   userUnits = lib.mapAttrsToList mkUserUnits allPorts;
 
+  # "<user> <port>" per line: what this host serves. Clients only know the
+  # users defined on *their* machine, so they ask the host. Not secret on a
+  # tailnet: names and port numbers, nothing else.
+  directoryFile = pkgs.writeText "cairn-remote-desktop-directory" (
+    lib.concatStrings (lib.mapAttrsToList (n: p: "${n} ${toString p}\n") allPorts)
+  );
+
+  directoryUnits = {
+    sockets.cairn-rd-directory = {
+      description = "Remote desktop port directory (tailnet only)";
+      wantedBy = [ "sockets.target" ];
+      socketConfig = {
+        ListenStream = toString cfg.directoryPort;
+        BindToDevice = tsIface;
+        FreeBind = true;
+        Accept = true;
+      };
+    };
+    services."cairn-rd-directory@" = {
+      description = "Remote desktop port directory";
+      serviceConfig = {
+        ExecStart = "${pkgs.coreutils}/bin/cat ${directoryFile}";
+        StandardInput = "socket";
+        StandardOutput = "socket";
+        DynamicUser = true;
+        PrivateNetwork = false;
+        ProtectSystem = "strict";
+        RuntimeMaxSec = "5s";
+      };
+    };
+  };
+
   # Client: user -> port, for every user this host knows about
   portTable = lib.concatStringsSep "\n" (
     lib.mapAttrsToList (n: p: "    ${n}) echo ${toString p} ;;") allPorts
   );
 
+  # Grabs the server's TLS certificate the way a VNC client would see it:
+  # RFB handshake, VeNCrypt, X509Plain, then TLS without verification, and
+  # bails before sending any credentials. The server just sees a client that
+  # hung up.
+  fetchCert = pkgs.writeText "cairn-remote-fetch-cert.py" ''
+    import socket, ssl, struct, sys
+
+    host, port, out = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+    try:
+        s = socket.create_connection((host, port), timeout=20)
+    except OSError as e:
+        sys.exit(f"{host}:{port}: {e.strerror or e}")
+
+    def rx(n):
+        b = b""
+        while len(b) < n:
+            c = s.recv(n - len(b))
+            if not c:
+                sys.exit(f"{host}:{port} hung up mid-handshake")
+            b += c
+        return b
+
+    if not rx(12).startswith(b"RFB 003."):
+        sys.exit(f"{host}:{port} isn't speaking VNC")
+    s.sendall(b"RFB 003.008\n")
+    types = list(rx(rx(1)[0]))
+    if 19 not in types:
+        sys.exit(f"{host}:{port} doesn't offer VeNCrypt (offers {types}); not a cairn remote desktop?")
+    s.sendall(bytes([19]))
+    rx(2)
+    s.sendall(bytes([0, 2]))
+    if rx(1)[0] != 0:
+        sys.exit("server refused VeNCrypt 0.2")
+    k = rx(1)[0]
+    subtypes = struct.unpack(f">{k}I", rx(4 * k))
+    if 262 not in subtypes:
+        sys.exit(f"server doesn't offer X509Plain (offers {subtypes})")
+    s.sendall(struct.pack(">I", 262))
+    if rx(1)[0] != 1:
+        sys.exit("server refused X509Plain")
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE  # we're fetching it to pin it, not trusting it yet
+    t = ctx.wrap_socket(s, server_hostname=host)
+    der = t.getpeercert(binary_form=True)
+    t.close()
+    with open(out, "w") as f:
+        f.write(ssl.DER_cert_to_PEM_cert(der))
+  '';
+
   cairnRemote = pkgs.writeShellScriptBin "cairn-remote" ''
     set -euo pipefail
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.coreutils
+        pkgs.openssl
+        pkgs.diffutils
+        pkgs.bash
+      ]
+    }:$PATH
+
     usage() {
       echo "usage: cairn-remote <host> [--user <name>] [--port <port>]" >&2
       echo "Opens a remote desktop session on <host> over the tailnet." >&2
@@ -315,6 +406,7 @@ let
         *) return 1 ;;
       esac
     }
+    fingerprint() { openssl x509 -in "$1" -noout -fingerprint -sha256 | cut -d= -f2; }
 
     [ $# -ge 1 ] || usage
     host=$1; shift
@@ -330,20 +422,78 @@ let
     done
 
     if [ -z "$port" ]; then
-      port=$(port_for "$user") || {
-        echo "cairn-remote: no remote desktop port on record for '$user' on this machine." >&2
-        echo "Pass it yourself: cairn-remote $host --user $user --port <port>" >&2
-        exit 1
-      }
+      # The host knows its own users; this machine only knows its own.
+      port=$(timeout 5 bash -c 'cat < "/dev/tcp/$1/$2"' _ "$host" ${toString cfg.directoryPort} 2>/dev/null \
+        | while read -r name p; do [ "$name" = "$user" ] && echo "$p"; done) || true
+      if [ -z "$port" ]; then
+        port=$(port_for "$user") || {
+          echo "cairn-remote: $host has no remote desktop for '$user' (or isn't answering), and neither does this machine." >&2
+          echo "If you know the port: cairn-remote $host --user $user --port <port>" >&2
+          exit 1
+        }
+      fi
     fi
 
-    uri="vnc://$user@$host:$port"
-    echo "cairn-remote: $uri" >&2
+    data="''${XDG_DATA_HOME:-$HOME/.local/share}/cairn-remote"
+    mkdir -p "$data/known" "$data/profiles"
+    pin="$data/known/$host-$port.pem"
+    seen=$(mktemp)
+    trap 'rm -f "$seen"' EXIT
+
+    # Trust on first use, then hold the server to it. The cert is per user per
+    # host, so the pin is keyed on host and port.
+    ${pkgs.python3}/bin/python3 -I ${fetchCert} "$host" "$port" "$seen" || {
+      echo "cairn-remote: couldn't reach a remote desktop at $host:$port. On the tailnet? Host has modules.remoteDesktop?" >&2
+      exit 1
+    }
+    if [ -s "$pin" ]; then
+      if ! cmp -s <(openssl x509 -in "$pin" -outform DER) <(openssl x509 -in "$seen" -outform DER); then
+        echo "cairn-remote: $host:$port is presenting a DIFFERENT certificate than last time." >&2
+        echo "  pinned: $(fingerprint "$pin")" >&2
+        echo "  now:    $(fingerprint "$seen")" >&2
+        echo "If you know why (the host was reinstalled, its state wiped), delete $pin and try again." >&2
+        echo "If you don't, don't." >&2
+        exit 1
+      fi
+    else
+      echo "cairn-remote: first connection to $host:$port. The server presents:" >&2
+      openssl x509 -in "$seen" -noout -subject >&2
+      echo "  SHA256 $(fingerprint "$seen")" >&2
+      if [ -t 0 ]; then
+        read -r -p "Trust it from now on? [y/N] " answer
+        case "$answer" in
+          y|Y|yes) ;;
+          *) echo "cairn-remote: not trusted, not connecting." >&2; exit 1 ;;
+        esac
+      else
+        echo "cairn-remote: run this once from a terminal to confirm the certificate." >&2
+        exit 1
+      fi
+      cp "$seen" "$pin"
+    fi
+
+    # A profile with the pinned cert and username already filled in. Remmina
+    # otherwise asks for both mid-handshake, and the server gives the whole
+    # handshake 30 seconds.
+    profile="$data/profiles/$user@$host-$port.remmina"
+    cat > "$profile" <<EOF
+    [remmina]
+    name=$user@$host
+    protocol=VNC
+    server=$host:$port
+    username=$user
+    cacert=$pin
+    keyboard_grab=1
+    colordepth=32
+    quality=9
+    EOF
+
+    echo "cairn-remote: $user@$host:$port" >&2
     if [ -n "''${CAIRN_REMOTE_DRY_RUN:-}" ]; then
-      echo "$uri"
+      echo "$profile"
       exit 0
     fi
-    exec ${pkgs.remmina}/bin/remmina -c "$uri"
+    exec ${pkgs.remmina}/bin/remmina -c "$profile"
   '';
 in
 {
@@ -358,6 +508,17 @@ in
       default = "1920x1080";
       description = "Display size of remote sessions on this host, as WIDTHxHEIGHT.";
       example = "2560x1440";
+    };
+
+    directoryPort = lib.mkOption {
+      type = lib.types.port;
+      default = 5899;
+      description = ''
+        Tailnet-only port where a serving host lists its users and their remote
+        desktop ports, so `cairn-remote <host> --user <name>` works from any
+        machine. Clients use the same value to ask. 5899 because libvirt's VNC
+        consoles start at 5900.
+      '';
     };
 
     client.enable = lib.mkOption {
@@ -391,6 +552,10 @@ in
             )}
             Give each user a unique cairn.users.users.<name>.remoteDesktop.port.
           '';
+        }
+        {
+          assertion = !(lib.elem cfg.directoryPort (lib.attrValues allPorts));
+          message = "cairn.remoteDesktop.directoryPort (${toString cfg.directoryPort}) collides with a user's remoteDesktop.port.";
         }
         {
           assertion = config.programs.niri.enable or false;
@@ -432,11 +597,14 @@ in
         };
       };
 
-      networking.firewall.interfaces.${tsIface}.allowedTCPPorts = lib.attrValues allPorts;
+      networking.firewall.interfaces.${tsIface}.allowedTCPPorts = lib.attrValues allPorts ++ [
+        cfg.directoryPort
+      ];
 
       systemd = lib.mkMerge (
         userUnits
         ++ [
+          directoryUnits
           {
             # Holds graphical-session.target up for a primary remote session,
             # the job niri.service does for a local login. Started by sessionReady.

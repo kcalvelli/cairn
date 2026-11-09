@@ -38,6 +38,15 @@
 - [ ] 7.4 End to end on mini (monitorless): connecting from edge over Tailscale (edge has a local niri session, so this also proves the client-side keyboard grab under niri) gives a fresh session, the LAN IP refuses the connection, reconnecting reattaches, the session is primary (the portal file chooser opens in the remote session), and Remmina's keyboard grab delivers `Super` binds to the remote niri.
 - [ ] 7.5 Deploy to edge and connect as a user who is logged in locally. Verify the remote session is isolated: the local display is untouched, and an app D-Bus-activated locally still opens locally.
 
+## 8. Findings from the mini rollout
+
+- [x] 8.1 Primary sessions don't use `niri --session` (it can't nest). They use a startup hook plus the `cairn-rd-graphical-session` holder. Verified on mini: session 27 came up primary with portals, kded6 and the keyring.
+- [x] 8.2 Session processes live in the logind scope. The reaper stops the scope on any exit. Verified on mini: session 27's scope and environment were gone after the stop.
+- [x] 8.3 Cleanup stops `graphical-session.target` and clears the session vars while they're still ours, and session units don't restart on switch. Verified on mini: session 29 survived the rebuild.
+- [x] 8.4 `cairn-remote` pins the cert TOFU and hands Remmina a profile with it. Verified: all five TOFU cases against mini, and keith's Remmina login plus `Super` grab from edge.
+- [x] 8.5 The owner check runs first in the live PAM stack. Verified on mini: traci's name on keith's port is rejected by `pam_exec` in 0.1 s with no `pam_unix` or keyring call.
+- [ ] 8.6 Port directory: deploy, then verify `cairn-remote mini --user traci` from edge resolves 5902 via mini's directory, and that traci (logged in locally on mini) gets an isolated session without disturbing her local one.
+
 ## Workflow follow-up
 
 - Run `/opsx:verify`, then `/opsx:archive` once 7.x passes on real hardware.

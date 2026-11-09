@@ -60,7 +60,13 @@ cairn-remote edge --user libby     # someone else's session (needs their passwor
 cairn-remote mini --port 5905      # a user this machine doesn't know about
 ```
 
-Any VNC client that does VeNCrypt (TLS with username and password) works too: `vnc://<user>@<host>:<port>`. On first connect, the client shows a self-signed certificate. Accept it once, and it stays the same after that.
+**The first connection to a host** shows the server's certificate fingerprint and asks you to trust it. Do that from a terminal. After that, `cairn-remote` pins it and refuses to connect if it ever changes (that's either a reinstalled host or someone in the middle; it tells you how to re-pin deliberately). Pins live in `~/.local/share/cairn-remote/known/`.
+
+`cairn-remote` hands Remmina the pinned certificate and your username, so all you type is the password. That matters: the server gives a client 30 seconds to finish logging in, and Remmina's own certificate dialog alone can eat that.
+
+**Logging in as someone else.** `--user` works for anyone the *host* serves, even if your machine has never heard of them: `cairn-remote` asks the host for the port (each serving host publishes its users and ports on tailnet port 5899). If they're logged in at that machine too, they get a second, isolated session; their local desktop isn't touched.
+
+Other VNC clients work if they do VeNCrypt with X.509: point them at `vnc://<user>@<host>:<port>` and give them the pinned `.pem` as the CA certificate.
 
 To turn the client on for a host that isn't a desktop, or off for one that is: `cairn.remoteDesktop.client.enable`.
 
