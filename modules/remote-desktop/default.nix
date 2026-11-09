@@ -75,6 +75,17 @@ let
     rm -f "$run/display"
   '';
 
+  # ExecStopPost, as root: end the logind session this unit opened. pam_systemd
+  # put every process (cage, niri, DMS, whatever the user launched) in that
+  # session's scope, not in the unit, so stopping the unit alone leaves a whole
+  # desktop running with no display. Found the hard way on mini.
+  sessionReap = pkgs.writeShellScript "cairn-rd-session-reap" ''
+    run="''${RUNTIME_DIRECTORY:-}"
+    [ -n "$run" ] && [ -s "$run/session-id" ] || exit 0
+    id=$(${pkgs.coreutils}/bin/cat "$run/session-id")
+    ${pkgs.systemd}/bin/loginctl terminate-session "$id" 2>/dev/null || true
+  '';
+
   # Runs as cage's only client. WAYLAND_DISPLAY is cage's socket here.
   #
   # Note pam_systemd moves this whole process tree out of the service's cgroup
@@ -147,6 +158,8 @@ let
 
     state="$STATE_DIRECTORY"
     run="$RUNTIME_DIRECTORY"
+    # For the reaper (ExecStopPost): this unit's logind session, from pam_systemd
+    echo "''${XDG_SESSION_ID:?pam_systemd gave us no session}" > "$run/session-id"
     export XDG_RUNTIME_DIR="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
     export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 
@@ -254,7 +267,11 @@ let
         RuntimeDirectory = "cairn-rd/${name}";
         RuntimeDirectoryMode = "0700";
         ExecStart = launchScript;
-        ExecStopPost = "-${sessionCleanup}";
+        ExecStopPost = [
+          "-${sessionCleanup}"
+          # '+': root, so it can always end the session even if logind says no to the user
+          "+${sessionReap}"
+        ];
         Restart = "no";
         # cage shrugs off SIGTERM while its client lives; don't wait 90s for it
         TimeoutStopSec = "10s";

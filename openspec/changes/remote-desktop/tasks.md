@@ -34,7 +34,7 @@
 
 - [x] 7.1 Run `nix fmt .` and `nix flake check --all-systems`, and verify both pass.
 - [ ] 7.2 GATE on mini (multiple users): owner-only auth. With users A and B both having ports, connect to A's port with B's valid credentials, then with a wrong password for A, then with the right password for A. Verify that only the last succeeds, and that `journalctl -t wayvnc`/`pam_exec` shows the owner-check rejection for B.
-- [ ] 7.3 GATE on mini: logind integration. Connect as A and verify that `loginctl list-sessions` shows A's remote session (class user, type wayland), that `user@<uid(A)>.service` is running, and that logging out of niri closes the session.
+- [ ] 7.3 GATE on mini: logind integration. Also verify that after logout or a forced stop, no niri/DMS/cage processes remain and the session scope is gone (`loginctl list-sessions` shows nothing abandoned). Then connect as A and verify that `loginctl list-sessions` shows A's remote session (class user, type wayland), that `user@<uid(A)>.service` is running, and that logging out of niri closes the session.
 - [ ] 7.4 End to end on mini (monitorless): connecting from pangolin over Tailscale gives a fresh session, the LAN IP refuses the connection, reconnecting reattaches, the session is primary (the portal file chooser opens in the remote session), and Remmina's keyboard grab delivers `Super` binds to the remote niri.
 - [ ] 7.5 Deploy to edge and connect as a user who is logged in locally. Verify the remote session is isolated: the local display is untouched, and an app D-Bus-activated locally still opens locally.
 

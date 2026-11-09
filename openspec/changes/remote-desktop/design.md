@@ -124,6 +124,8 @@ Alternatives considered: refusing remote login while a local session exists, whi
 
 **Deployment finding 2:** `PAMName=` plus `pam_systemd` moves the unit's processes into the logind session scope, so the service cgroup is empty. `Type=notify` can never work (systemd drops sd_notify from outside the unit), and `KillMode=control-group` has nothing to kill. The session unit is `Type=simple` with `TimeoutStopSec=10s` (cage ignores SIGTERM, so it gets SIGKILLed, and niri and wayvnc die with their compositor). The proxy's `ExecStartPre` waits for wayvnc's socket instead.
 
+**Deployment finding 3:** the same move means *stopping the unit doesn't stop the session*. On mini, every SIGKILLed cage left its nested niri, DMS and ghostty running in an abandoned session scope (seven of them). The launcher records `$XDG_SESSION_ID`, and a root `ExecStopPost` (`cairn-rd-session-reap`) runs `loginctl terminate-session` on it. That kills the whole scope on any exit, clean logout included, so nothing the user launched outlives the session.
+
 ### D7: The environment import is wrapped, not duplicated
 
 Both profiles' `spawn-at-startup` entry for `dbus-update-activation-environment --systemd --all` becomes a small cairn script, `cairn-import-session-env`, that exits 0 when `CAIRN_SESSION_ISOLATED=1` and otherwise does the import. One niri config serves local, primary-remote, and isolated-remote sessions, and nothing forks the user's config.
