@@ -84,6 +84,10 @@ let
     [ -n "$run" ] && [ -s "$run/session-id" ] || exit 0
     id=$(${pkgs.coreutils}/bin/cat "$run/session-id")
     ${pkgs.systemd}/bin/loginctl terminate-session "$id" 2>/dev/null || true
+    # terminate-session is a no-op once logind has marked the scope abandoned
+    # (it does that the moment cage, the session leader, dies). Stopping the
+    # scope unit kills what's in it regardless.
+    ${pkgs.systemd}/bin/systemctl stop "session-$id.scope" 2>/dev/null || true
   '';
 
   # Runs as cage's only client. WAYLAND_DISPLAY is cage's socket here.
