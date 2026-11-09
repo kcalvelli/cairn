@@ -76,12 +76,13 @@ To turn the client on for a host that isn't a desktop, or off for one that is: `
 
 Your D-Bus session (portals, the activation environment) is per user, not per session. So:
 
-- **Nobody logged in as you on that host:** the remote session is **primary**. File pickers, screen sharing and app activation all target it. This is the normal case for a monitorless box.
+- **Nobody logged in as you on that host:** the remote session is **primary**. File pickers, app activation and your session services all target it. This is the normal case for a monitorless box.
 - **You're also logged in at the machine:** the remote session is **isolated**. It leaves your local session alone, but anything that goes through your D-Bus session, such as portal file pickers, screen-share prompts and apps that run as a single shared instance (ghostty), shows up on the **local** screen. Launch things from inside the remote session when you can.
 
 ## Limits
 
 - No audio.
+- No screen sharing *from* apps inside a remote session (portal screencast needs niri's session mode, and a nested niri can't have it).
 - Fixed resolution per host (`cairn.remoteDesktop.resolution`). The window doesn't follow the client's size.
 - One display per session.
 - Hosts without a GPU render in software (llvmpipe). It's fine for desktop work, but don't expect games.

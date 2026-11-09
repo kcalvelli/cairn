@@ -40,16 +40,54 @@ let
     [ -n "$PAM_USER" ] && [ "$PAM_USER" = "$(${pkgs.coreutils}/bin/id -un)" ]
   '';
 
+  # Primary sessions only, run by niri at startup with niri's own environment.
+  # Does the part of `niri --session` we can't have (it strips WAYLAND_DISPLAY,
+  # so it can't nest): point the user manager at this display and bring up
+  # graphical-session.target so session-bound user services start.
+  sessionReady = pkgs.writeShellScript "cairn-rd-session-ready" ''
+    echo "''${WAYLAND_DISPLAY:-}" > "$RD_RUN/display"
+    ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd \
+      WAYLAND_DISPLAY DISPLAY NIRI_SOCKET XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_DESKTOP
+    ${pkgs.systemd}/bin/systemctl --user start cairn-rd-graphical-session.service
+  '';
+
+  # Undo sessionReady. Runs after niri exits and again from ExecStopPost, so a
+  # session that dies hard still doesn't leave the user manager pointed at a
+  # display that's gone. Only unsets what still points at *our* display: if a
+  # local login took over meanwhile, its environment stays put.
+  sessionCleanup = pkgs.writeShellScript "cairn-rd-session-cleanup" ''
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.coreutils
+        pkgs.gnugrep
+        pkgs.systemd
+      ]
+    }
+    XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    export XDG_RUNTIME_DIR
+    run="''${RUNTIME_DIRECTORY:-''${RD_RUN:-}}"
+    [ -n "$run" ] && [ -s "$run/display" ] || exit 0
+    systemctl --user stop cairn-rd-graphical-session.service || true
+    if systemctl --user show-environment | grep -qx "WAYLAND_DISPLAY=$(cat "$run/display")"; then
+      systemctl --user unset-environment WAYLAND_DISPLAY DISPLAY NIRI_SOCKET \
+        XDG_SESSION_TYPE XDG_SESSION_DESKTOP XDG_CURRENT_DESKTOP RD_RUN || true
+    fi
+    rm -f "$run/display"
+  '';
+
   # Runs as cage's only client. WAYLAND_DISPLAY is cage's socket here.
+  #
+  # Note pam_systemd moves this whole process tree out of the service's cgroup
+  # into the logind session scope. So no sd_notify (systemd ignores it from
+  # outside the unit), and no KillMode tricks; the proxy waits for the socket.
   sessionScript = pkgs.writeShellScript "cairn-rd-session" ''
     set -u
     export PATH=${
       lib.makeBinPath [
         pkgs.coreutils
-        pkgs.systemd
+        pkgs.bashInteractive
         pkgs.wayvnc
         pkgs.wlr-randr
-        config.programs.niri.package
       ]
     }:$PATH
 
@@ -68,24 +106,27 @@ let
       kill "$vnc" 2>/dev/null
       exit 1
     fi
-    systemd-notify --ready --status="serving $RD_ROLE session"
 
+    # niri never runs with --session here: --session strips WAYLAND_DISPLAY and
+    # grabs the real GPU instead of nesting. Primary sessions get the session
+    # plumbing from sessionReady; isolated ones get none of it, on purpose.
+    hook=()
     if [ "$RD_ROLE" = primary ]; then
-      # Same road a greeter login takes: niri.service, graphical-session.target,
-      # portals, the lot. niri-session re-execs through the user's login shell.
       unset CAIRN_SESSION_ISOLATED
-      export NIRI_CONFIG="$RD_NIRI_CONFIG"
-      niri-session
-      # niri-session unsets the display vars but not ours. Don't leave a
-      # future local login pointed at the remote wrapper.
-      systemctl --user unset-environment NIRI_CONFIG || true
+      hook=(-- ${sessionReady})
     else
-      # Someone's already using this account's portals and activation env.
-      # Run niri inside this unit, keep our hands off the user bus.
       export CAIRN_SESSION_ISOLATED=1
-      "$SHELL" -l -c 'exec niri -c "$RD_NIRI_CONFIG"'
     fi
 
+    # A bash login shell for the NixOS/home-manager profile (PATH and friends),
+    # and nothing cage- or launcher-specific in niri's environment, so none of
+    # it leaks into apps or the user manager.
+    bash -l -c 'exec "$@"' cairn-rd \
+      env -u WLR_BACKENDS -u WLR_HEADLESS_OUTPUTS -u WLR_RENDERER \
+        -u RD_RESOLUTION -u RD_NIRI_CONFIG -u RD_ROLE \
+      ${config.programs.niri.package}/bin/niri -c "$RD_NIRI_CONFIG" "''${hook[@]}"
+
+    [ "$RD_ROLE" = primary ] && ${sessionCleanup}
     kill "$vnc" 2>/dev/null
     wait "$vnc" 2>/dev/null
     exit 0
@@ -135,9 +176,11 @@ let
     }
     EOF
 
-    # Primary unless some other niri --session already owns the portal-facing
-    # Mutter names on this user's bus.
-    if busctl --user status org.gnome.Mutter.ScreenCast >/dev/null 2>&1; then
+    # Primary unless this user already has a graphical session on this host:
+    # a running graphical-session.target, or a niri --session holding the
+    # portal-facing Mutter names.
+    if systemctl --user -q is-active graphical-session.target \
+      || busctl --user status org.gnome.Mutter.ScreenCast >/dev/null 2>&1; then
       role=isolated
     else
       role=primary
@@ -172,6 +215,16 @@ let
       after = [ "cairn-rd-session-${name}.service" ];
       serviceConfig = {
         User = name;
+        # The session can't sd_notify (see sessionScript), so wait for wayvnc here.
+        ExecStartPre = pkgs.writeShellScript "cairn-rd-wait-${name}" ''
+          for _ in $(${pkgs.coreutils}/bin/seq 400); do
+            [ -S /run/cairn-rd/${name}/vnc.sock ] && exit 0
+            ${pkgs.coreutils}/bin/sleep 0.1
+          done
+          echo "cairn-rd: ${name}'s session never came up; see cairn-rd-session-${name}.service" >&2
+          exit 1
+        '';
+        TimeoutStartSec = "60s";
         ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=10min /run/cairn-rd/${name}/vnc.sock";
         PrivateTmp = true;
         NoNewPrivileges = true;
@@ -192,8 +245,7 @@ let
         XDG_CURRENT_DESKTOP = "niri";
       };
       serviceConfig = {
-        Type = "notify";
-        NotifyAccess = "all";
+        Type = "simple";
         User = name;
         PAMName = "cairn-remote-desktop";
         WorkingDirectory = "~";
@@ -202,10 +254,10 @@ let
         RuntimeDirectory = "cairn-rd/${name}";
         RuntimeDirectoryMode = "0700";
         ExecStart = launchScript;
+        ExecStopPost = "-${sessionCleanup}";
         Restart = "no";
-        TimeoutStartSec = "60s";
-        # cage shrugs off SIGTERM while its client lives; take the whole cgroup
-        KillMode = "control-group";
+        # cage shrugs off SIGTERM while its client lives; don't wait 90s for it
+        TimeoutStopSec = "10s";
       };
     };
   };
@@ -349,7 +401,27 @@ in
 
       networking.firewall.interfaces.${tsIface}.allowedTCPPorts = lib.attrValues allPorts;
 
-      systemd = lib.mkMerge userUnits;
+      systemd = lib.mkMerge (
+        userUnits
+        ++ [
+          {
+            # Holds graphical-session.target up for a primary remote session,
+            # the job niri.service does for a local login. Started by sessionReady.
+            user.services.cairn-rd-graphical-session = {
+              description = "Remote desktop graphical session (cairn)";
+              bindsTo = [ "graphical-session.target" ];
+              before = [ "graphical-session.target" ];
+              wants = [ "graphical-session-pre.target" ];
+              after = [ "graphical-session-pre.target" ];
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+                ExecStart = "${pkgs.coreutils}/bin/true";
+              };
+            };
+          }
+        ]
+      );
     })
 
     (lib.mkIf cfg.client.enable {

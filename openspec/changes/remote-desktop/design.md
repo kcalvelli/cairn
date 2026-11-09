@@ -70,7 +70,7 @@ cairn-rd-proxy-U.service (system)  systemd-socket-proxyd /run/cairn-rd/U/vnc.soc
         ▼
 cairn-rd-session-U.service (system)  User=U, PAMName=cairn-remote-desktop
         └─ cairn-rd-launch: cage -d (headless) ─┬─ wayvnc -u /run/cairn-rd/U/vnc.sock   (attached to cage)
-                                                └─ niri [--session?] -c /run/cairn-rd/U/niri.kdl
+                                                └─ niri -c <state>/niri.kdl [-- cairn-rd-session-ready]   (never --session)
 ```
 
 - With `PAMName=` and `pam_systemd` in the dedicated PAM service, the session becomes a real logind session. That's what gives it `XDG_RUNTIME_DIR`, `user@U.service`, and the right cgroup. Environment sets `XDG_SESSION_TYPE=wayland` and `XDG_SESSION_CLASS=user`. No lingering needed, and the user manager starts only on demand.
@@ -107,15 +107,22 @@ Alternatives considered: one host-wide key readable by a shared group. Rejected 
 
 Sockets use `BindToDevice=tailscale0` (`FreeBind=true` so boot order doesn't matter), and ports open via `networking.firewall.interfaces.tailscale0.allowedTCPPorts`. Belt and braces: either one alone is enough to keep LAN and WAN out. An assertion requires `services.tailscale.enable`. The interface name comes from `services.tailscale.interfaceName`.
 
-### D6: Session role is decided at launch by who owns the Mutter names
+### D6: Session role is decided at launch; niri never runs with `--session` in a remote session
 
-`cairn-rd-launch` checks whether `org.gnome.Mutter.ScreenCast` already has an owner on U's user bus (`busctl --user status`):
-- **Unowned (primary):** start niri with `--session`. It claims the portal-facing names and imports the environment, so portals and screencast follow the remote session.
-- **Owned (isolated):** start niri without `--session` and export `CAIRN_SESSION_ISOLATED=1`. niri doesn't touch the bus names or the systemd/D-Bus environment, and the startup import is skipped (D7). Downside: D-Bus-activated apps and portal dialogs started *from* the remote session show up on the local display. This is documented, not fixed in v1.
+**Deployment finding (mini, first connect):** `niri --session` strips `WAYLAND_DISPLAY` ("running as a session but WAYLAND_DISPLAY is set, removing it") and falls back to the TTY backend. A nested niri can never be a `--session` niri. The first design (primary sessions via `niri-session`/`niri.service`) started a real TTY session on mini's GPU instead of nesting in cage. It also ran `systemctl --user import-environment` with the launcher's whole environment, leaking `WLR_*`, `RD_*` and `NIRI_CONFIG` into the user manager.
 
-If a local login happens later, while a primary remote session is running, the local `--session` niri takes the names back. That's acceptable and matches what logging in locally means.
+So both roles run plain `niri -c <wrapper>` inside the session unit, and the role only decides what plumbing gets added:
 
-Alternatives considered: refusing remote login while a local session exists. Too restrictive for the common case of reaching your own desktop while it sits locked at home. A private D-Bus per remote session: loses the keyring, secrets, and every user-bus service, which is worse.
+- **Primary** (the user has no active `graphical-session.target` and nobody owns `org.gnome.Mutter.ScreenCast`): niri is started with a startup hook (`niri … -- cairn-rd-session-ready`). Running with niri's own environment, the hook imports only `WAYLAND_DISPLAY DISPLAY NIRI_SOCKET XDG_*` into systemd and D-Bus, records the display in the runtime dir, and starts `cairn-rd-graphical-session.service`. That's a cairn user unit which `BindsTo`/`Before` `graphical-session.target`, the job `niri.service` does for a local login. kded6, portals and other session-bound user services come up. Cleanup (after niri exits, and again from `ExecStopPost` for hard deaths) stops that unit, and unsets the imported variables only if `WAYLAND_DISPLAY` in the user manager is still *ours*, so a local login that happened meanwhile keeps its environment.
+- **Isolated:** no hook, `CAIRN_SESSION_ISOLATED=1`, and the user manager is untouched. The trade-off: D-Bus-activated apps and portal dialogs started from the remote session show up on the local display. Documented, not fixed in v1.
+
+niri's environment is scrubbed of cage and launcher variables (`env -u WLR_* -u RD_*`) before it starts, so nothing leaks into apps or, through the user's own `--all` import, into the user manager.
+
+**Lost with `--session`:** niri only claims the `org.gnome.Mutter.*` names under `--session`, so `xdg-desktop-portal-gnome` can't screencast a remote session. That's a spec'd limit. File chooser and the other portals don't need those names.
+
+Alternatives considered: refusing remote login while a local session exists, which is too restrictive for the common case of reaching your own desktop while it sits locked at home. A private D-Bus per remote session, which loses the keyring, secrets and every user-bus service.
+
+**Deployment finding 2:** `PAMName=` plus `pam_systemd` moves the unit's processes into the logind session scope, so the service cgroup is empty. `Type=notify` can never work (systemd drops sd_notify from outside the unit), and `KillMode=control-group` has nothing to kill. The session unit is `Type=simple` with `TimeoutStopSec=10s` (cage ignores SIGTERM, so it gets SIGKILLed, and niri and wayvnc die with their compositor). The proxy's `ExecStartPre` waits for wayvnc's socket instead.
 
 ### D7: The environment import is wrapped, not duplicated
 

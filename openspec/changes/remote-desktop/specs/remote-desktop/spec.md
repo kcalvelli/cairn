@@ -80,15 +80,26 @@ A remote session SHALL keep running when the client disconnects, and the next au
 - **THEN** the session's processes stop, the logind session closes, and the next connection starts a fresh session
 
 ### Requirement: Session role does not disturb the local session
-If the user has no other graphical session on the host, the remote session SHALL act as the primary session: portals, screencast, and the activation environment target it. Otherwise it SHALL run isolated and MUST NOT change the activation environment of the user's existing session.
+If the user has no other graphical session on the host, the remote session SHALL act as the primary session: the activation environment and portals target it, and the user's graphical-session services start. Otherwise it SHALL run isolated and MUST NOT change the activation environment of the user's existing session.
 
 #### Scenario: Primary remote session
 - **WHEN** a remote session starts and the user has no other graphical session on the host
-- **THEN** portal-backed features (file chooser, screencast) inside the remote session work against the remote session
+- **THEN** the portal file chooser opens inside the remote session and the user's graphical-session.target is active
+
+#### Scenario: Primary session cleans up after itself
+- **WHEN** a primary remote session ends, cleanly or not
+- **THEN** the user's systemd activation environment no longer points at the remote display, and graphical-session.target is no longer held by it
 
 #### Scenario: Isolated remote session
 - **WHEN** a remote session starts while the user has a local graphical session
 - **THEN** apps D-Bus-activated from the local session still open on the local display
+
+### Requirement: No screencast inside remote sessions
+Remote sessions SHALL NOT offer portal screencast (screen sharing from apps inside the session). The documentation MUST state this limit.
+
+#### Scenario: App requests screen sharing in a remote session
+- **WHEN** an app inside a remote session asks the portal to share the screen
+- **THEN** no remote-session screen is offered, and the limit is documented in REMOTE_DESKTOP.md
 
 ### Requirement: Configurable session resolution
 The headless session's display resolution SHALL be configurable per host. It SHALL default to 1920x1080.
