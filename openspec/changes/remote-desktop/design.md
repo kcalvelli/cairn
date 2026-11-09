@@ -81,7 +81,7 @@ cairn-rd-session-U.service (system)  User=U, PAMName=cairn-remote-desktop
 
 Alternatives considered: user-level socket units with linger. Rejected: lingering every user on every host starts all their `default.target` user services (syncthing, mcp-gateway, …) at boot whether or not anyone ever connects.
 
-**Registration.** The module is a *core* module (always imported), and `modules.remoteDesktop` maps to `cairn.remoteDesktop.enable`. A flag-gated import would hide `cairn.remoteDesktop.client.enable`, and pangolin needs the client without serving anything.
+**Registration.** The module is a *core* module (always imported), and `modules.remoteDesktop` maps to `cairn.remoteDesktop.enable`. A flag-gated import would hide `cairn.remoteDesktop.client.enable`, and client-only hosts (edge, pangolin) need the client without serving anything.
 
 **Primary sessions go through `niri-session`.** With `NIRI_CONFIG` pointing at the wrapper config, the remote niri runs as `niri.service`, `graphical-session.target` comes up, and kded6, portals and other session-bound user services start exactly as they would after a greeter login. Afterwards the launcher unsets `NIRI_CONFIG` from the user manager, so a later local login doesn't inherit the remote wrapper. The wrapper also lives in the persistent state dir, so even a stale value points at a valid file. Isolated sessions run `niri -c` directly inside the unit, through the user's login shell.
 
