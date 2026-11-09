@@ -5,6 +5,9 @@
     email = "{{EMAIL}}";
     isAdmin = {{IS_ADMIN}};
     homeProfile = "{{HOME_PROFILE}}";
+    # Tailnet-only remote desktop port. Same on every host; only listens
+    # where the host sets modules.remoteDesktop = true.
+    remoteDesktop.port = {{RD_PORT}};
   };
 
   home-manager.users.{{USERNAME}} = {

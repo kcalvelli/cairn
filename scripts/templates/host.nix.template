@@ -29,6 +29,7 @@
       users = true;
       virt = {{ENABLE_VIRT}};
       gaming = {{ENABLE_GAMING}};
+      remoteDesktop = {{ENABLE_REMOTE_DESKTOP}}; # tailnet-only, needs networking (Tailscale)
       pim = {{ENABLE_PIM}};
       secrets = {{ENABLE_SECRETS}};
     };

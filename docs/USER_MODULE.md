@@ -60,6 +60,8 @@ Each attribute key is a username. Available options per user:
 | `isAdmin` | bool | `false` | Admin privileges (wheel group + nix trusted-users) |
 | `homeProfile` | null or enum | `null` | Per-user home profile override (`"standard"`, `"normie"`) |
 | `extraGroups` | list of strings | `[]` | Additional groups beyond auto-assigned ones |
+| `linger` | bool | `false` | Start the user's systemd manager at boot and keep it after logout |
+| `remoteDesktop.port` | null or port | `null` | Tailnet-only remote desktop port for this user, the same on every host. Unique per host. See [REMOTE_DESKTOP.md](REMOTE_DESKTOP.md) |
 
 When `homeProfile` is `null`, the user inherits the host's `homeProfile` setting.
 

@@ -21,5 +21,6 @@
     companion = ./companion;
     syncthing = ./syncthing;
     installer = ./installer;
+    remoteDesktop = ./remote-desktop;
   };
 }

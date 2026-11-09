@@ -93,11 +93,8 @@
 
       spawn-at-startup = [
         {
-          command = [
-            "${pkgs.dbus}/bin/dbus-update-activation-environment"
-            "--systemd"
-            "--all"
-          ];
+          # Skipped in isolated (secondary) sessions, see import-session-env.nix
+          command = [ "${import ./import-session-env.nix { inherit pkgs; }}" ];
         }
         # Overview blur: DMS-native backdrop (seeded via
         # cairn.wallpapers.overviewBlur). No swaybg.

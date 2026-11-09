@@ -266,6 +266,7 @@ let
         crashDiagnostics # Always available for extraConfig.hardware.crashDiagnostics
         hardware # Parent hardware module
         services # Always available for cairn.immich (Tailscale Services integration)
+        remoteDesktop # Always available: the client side (cairn-remote) works without serving; modules.remoteDesktop turns the server on
       ];
 
       # Modules controlled by modules.X flags
@@ -381,6 +382,10 @@ let
             # Enable Syncthing module if specified
             (lib.optionalAttrs (hostCfg.modules.syncthing or false) {
               cairn.syncthing.enable = true;
+            })
+            # Enable remote desktop serving if specified (tailnet-only)
+            (lib.optionalAttrs (hostCfg.modules.remoteDesktop or false) {
+              cairn.remoteDesktop.enable = true;
             })
             # Add cairn config (immich, etc.) if module is enabled and config exists
             (lib.optionalAttrs ((hostCfg.modules.services or false) && (hostCfg ? cairn)) {

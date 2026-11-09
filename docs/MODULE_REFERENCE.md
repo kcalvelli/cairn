@@ -530,6 +530,28 @@ folders.documents = {
 
 ---
 
+### remoteDesktop
+**What it does:** Tailnet-only remote desktop. Any user can log in to any host and get a fresh, headless niri session over VNC.
+
+**Includes:**
+- On-demand per-user sessions (the session starts when you connect and lives until you log out)
+- Owner-only VeNCrypt/PAM authentication, with a per-user TLS identity
+- Primary or isolated session roles, so a remote login never hijacks your local one
+- `cairn-remote` plus Remmina on desktop hosts (the client works without serving)
+
+**When to use:** Monitorless servers, or reaching your own desktop from another machine on the tailnet
+
+**Requirements:** `desktop = true` and `networking = true` (Tailscale). Each user who logs in remotely needs `remoteDesktop.port` and a password.
+
+**Configuration:**
+
+```nix
+modules.remoteDesktop = true;
+# users/<name>.nix: cairn.users.users.<name>.remoteDesktop.port = 5901;
+```
+
+See [REMOTE_DESKTOP.md](REMOTE_DESKTOP.md) for the full guide.
+
 ### services
 **What it does:** Enables self-hosted services on your system.
 
@@ -678,6 +700,7 @@ Some modules require others to work properly:
 | `gaming` | `graphics` | Games need GPU drivers |
 | `ai` | `networking` | AI tools need internet access |
 | `syncthing` | `networking` | Syncthing uses Tailscale for transport |
+| `remoteDesktop` | `networking`, `desktop` | Tailnet-only listener; serves niri sessions |
 
 Cairn automatically checks these and will show a clear error if dependencies are missing.
 

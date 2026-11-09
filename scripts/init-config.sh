@@ -309,7 +309,8 @@ collect_features() {
     "Secure Boot (Lanzaboote)" \
     "Secrets (age-encrypted)" \
     "Virtualization - libvirt/KVM" \
-    "Virtualization - Containers (Podman)") || true
+    "Virtualization - Containers (Podman)" \
+    "Remote desktop (tailnet-only niri sessions)") || true
 
   # Parse selections
   ENABLE_GAMING="false"
@@ -320,6 +321,7 @@ collect_features() {
   ENABLE_SECRETS="false"
   ENABLE_LIBVIRT="false"
   ENABLE_CONTAINERS="false"
+  ENABLE_REMOTE_DESKTOP="false"
 
   if echo "$selected" | grep -q "Gaming"; then
     ENABLE_GAMING="true"
@@ -344,6 +346,9 @@ collect_features() {
   fi
   if echo "$selected" | grep -q "Containers"; then
     ENABLE_CONTAINERS="true"
+  fi
+  if echo "$selected" | grep -q "Remote desktop"; then
+    ENABLE_REMOTE_DESKTOP="true"
   fi
 
   # Derive ENABLE_VIRT from sub-options
@@ -501,6 +506,7 @@ show_summary() {
   lines+=("SSD:           $HAS_SSD")
   lines+=("")
   lines+=("Gaming:        $ENABLE_GAMING")
+  lines+=("Remote desk:   $ENABLE_REMOTE_DESKTOP")
   if [ "$ENABLE_PIM" = "true" ]; then
     lines+=("PIM:           $ENABLE_PIM ($PIM_ROLE)")
   else
@@ -534,6 +540,21 @@ show_summary() {
 # ──────────────────────────────────────────────────────────────────
 # Generate user file from template
 # ──────────────────────────────────────────────────────────────────
+# Next free remote desktop port across every user file in the config.
+# Ports live in user files and follow the user to every host, so they have
+# to be unique config-wide, not just per host. Starts at 5901.
+next_rd_port() {
+  local target_dir="$1" max=5900 p f
+  for f in "${target_dir}"/users/*.nix; do
+    [ -f "$f" ] || continue
+    p=$(sed -n 's/.*remoteDesktop\.port *= *\([0-9]\+\).*/\1/p' "$f" | head -1)
+    if [ -n "$p" ] && [ "$p" -gt "$max" ]; then
+      max=$p
+    fi
+  done
+  echo $((max + 1))
+}
+
 generate_user_file() {
   local target_dir="$1"
   local u_name="$2"
@@ -543,7 +564,10 @@ generate_user_file() {
   local u_profile="${6:-standard}"
 
   if [ -f "${TEMPLATE_DIR}/user.nix.template" ]; then
+    local u_rd_port
+    u_rd_port=$(next_rd_port "$target_dir")
     sed -e "s|{{USERNAME}}|${u_name}|g" \
+        -e "s|{{RD_PORT}}|${u_rd_port}|g" \
         -e "s|{{FULLNAME}}|${u_full}|g" \
         -e "s|{{EMAIL}}|${u_email}|g" \
         -e "s|{{IS_ADMIN}}|${u_admin}|g" \
@@ -572,6 +596,7 @@ generate_host_files() {
         -e "s|{{IS_LAPTOP}}|${IS_LAPTOP}|g" \
         -e "s|{{HOME_PROFILE}}|${HOME_PROFILE}|g" \
         -e "s|{{ENABLE_GAMING}}|${ENABLE_GAMING}|g" \
+        -e "s|{{ENABLE_REMOTE_DESKTOP}}|${ENABLE_REMOTE_DESKTOP}|g" \
         -e "s|{{ENABLE_PIM}}|${ENABLE_PIM}|g" \
         -e "s|{{ENABLE_AI}}|${ENABLE_AI}|g" \
         -e "s|{{ENABLE_SECRETS}}|${ENABLE_SECRETS}|g" \
@@ -766,6 +791,7 @@ new_config_flow() {
           -e "s|{{IS_LAPTOP}}|${IS_LAPTOP}|g" \
           -e "s|{{HOME_PROFILE}}|${HOME_PROFILE}|g" \
           -e "s|{{ENABLE_GAMING}}|${ENABLE_GAMING}|g" \
+          -e "s|{{ENABLE_REMOTE_DESKTOP}}|${ENABLE_REMOTE_DESKTOP}|g" \
           -e "s|{{ENABLE_PIM}}|${ENABLE_PIM}|g" \
           -e "s|{{ENABLE_AI}}|${ENABLE_AI}|g" \
           -e "s|{{ENABLE_SECRETS}}|${ENABLE_SECRETS}|g" \

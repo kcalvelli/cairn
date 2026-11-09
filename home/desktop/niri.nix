@@ -38,11 +38,8 @@
         # Ensure session variables are imported into the systemd/DBus environment
         # This is critical for XDG_MENU_PREFIX and other session-wide variables
         {
-          command = [
-            "${pkgs.dbus}/bin/dbus-update-activation-environment"
-            "--systemd"
-            "--all"
-          ];
+          # Skipped in isolated (secondary) sessions, see import-session-env.nix
+          command = [ "${import ./import-session-env.nix { inherit pkgs; }}" ];
         }
 
         # Clipboard management: Handled by DMS natively (enableSpawn=true)

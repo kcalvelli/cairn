@@ -25,9 +25,11 @@ See `proposal.md` for the motivation. The facts below, checked on edge (niri 26.
 
 ## Decisions
 
-### D1: VNC via wayvnc, attached to niri
+### D1: VNC via wayvnc, attached to cage (not niri)
 
-wayvnc talks to niri directly over screencopy and virtual pointer/keyboard, so the portal's missing RemoteDesktop doesn't matter. It supports VeNCrypt/TLS with PAM, and it can listen on a Unix socket (`--unix-socket`).
+wayvnc speaks wlroots protocols (screencopy, virtual pointer and keyboard), so the portal's missing RemoteDesktop doesn't matter. It supports VeNCrypt/TLS with PAM, and it can listen on a Unix socket (`-u`).
+
+**Spike finding (task 1.1):** wayvnc must attach to the **host compositor (cage)**, not to niri. niri's virtual-keyboard handling (from smithay) sends keys straight to the focused client and skips the compositor's bind handling. Attached to niri, typing works but no niri keybind ever fires. Attached to cage, the virtual keyboard goes through the wlroots seat, cage delivers ordinary `wl_keyboard` events to niri's winit window, and every bind works. Capture is the same either way: cage's output is niri's window, fullscreen.
 
 Alternatives considered:
 - **gnome-remote-desktop**: needs `Mutter.RemoteDesktop` (niri doesn't have it), and its headless multi-user mode needs GDM and gnome-shell.
@@ -38,11 +40,22 @@ Alternatives considered:
 
 ### D2: Headless host is cage, with niri nested inside
 
-The session runs `cage` with `WLR_BACKENDS=headless`, and cage runs niri as its single fullscreen client (winit backend). cage is a wlroots kiosk compositor: one app, fullscreen, nothing else, which is the minimal host we need. Output size comes from `wlr-randr` against cage at startup, using the configured resolution. wayvnc attaches to **niri's** Wayland socket, not cage's, so it captures niri's output and injects input into niri.
+The session runs `cage -d` with `WLR_BACKENDS=headless`. cage's single client is a small session script that:
+1. sets the headless output mode with `wlr-randr --output HEADLESS-1 --custom-mode <resolution>`,
+2. starts wayvnc against cage's socket (D1),
+3. runs `niri -c <session config>` in the foreground (winit backend, since `WAYLAND_DISPLAY` points at cage).
 
-Rendering goes through the GPU render node when there is one, and falls back to Mesa llvmpipe (software) otherwise. Slow, but it works on any host.
+When niri exits, the script stops wayvnc, cage exits, and the unit stops.
 
-Alternatives considered: niri's internal headless backend has no supported way to turn it on, so it isn't used. If task 1.1 finds a usable one, drop cage and run niri directly. `vkms` plus niri's TTY backend needs a seat-active session per user, which can't work for concurrent users. sway headless would also work as a host, but cage is smaller and single-purpose.
+**Spike findings (task 1.1, edge, niri 26.04, cage 0.3.1, wayvnc 0.10.2, RX 6750 XT):**
+- `cage -d` is required. Without it, niri's winit window draws client-side decorations and the session is 1912x1048 inside a 1920x1080 output, with a black strip at the bottom. With it, the session is exactly the configured size.
+- A nested niri uses **Alt** as `Mod`. The session config therefore wraps the user's config: an `include` of `~/.config/niri/config.kdl` followed by `input { mod-key-nested "Super"; }`. Checked: all of the user's settings load through the include, and Super binds work while Alt no longer triggers them.
+- The user's DMS starts from the user's own `spawn-at-startup`, and `dms ipc …` from inside the nested session reaches the **nested** DMS, not the local one. Two DMS instances for one user coexist.
+- The GPU render node is picked up automatically (radeonsi). Full 1920x1080 raw frames arrive over the Unix socket in about 20 ms.
+- cage ignores SIGTERM while its client is alive, so the unit relies on systemd's control-group kill (`KillMode=control-group`, the default), not on signalling cage.
+- vncdotool can't receive frames from wayvnc (it hangs after ServerInit). Tests use a minimal raw RFB client instead.
+
+Alternatives considered: niri has no runtime-selectable headless backend (none found in 26.04's CLI, env, or strings), so the host compositor stays. `vkms` plus niri's TTY backend needs a seat-active session per user, which can't work for concurrent users. sway headless would also work as a host, but cage is smaller and single-purpose.
 
 ### D3: Lifecycle from systemd system units, PAM-backed, one set per user
 
@@ -56,7 +69,8 @@ cairn-rd-proxy-U.service (system)  systemd-socket-proxyd /run/cairn-rd/U/vnc.soc
         │ Requires/After
         ▼
 cairn-rd-session-U.service (system)  User=U, PAMName=cairn-remote-desktop
-        └─ cairn-rd-launch: cage (headless) → niri [--session?] → wayvnc -u /run/cairn-rd/U/vnc.sock
+        └─ cairn-rd-launch: cage -d (headless) ─┬─ wayvnc -u /run/cairn-rd/U/vnc.sock   (attached to cage)
+                                                └─ niri [--session?] -c /run/cairn-rd/U/niri.kdl
 ```
 
 - With `PAMName=` and `pam_systemd` in the dedicated PAM service, the session becomes a real logind session. That's what gives it `XDG_RUNTIME_DIR`, `user@U.service`, and the right cgroup. Environment sets `XDG_SESSION_TYPE=wayland` and `XDG_SESSION_CLASS=user`. No lingering needed, and the user manager starts only on demand.
@@ -67,13 +81,27 @@ cairn-rd-session-U.service (system)  User=U, PAMName=cairn-remote-desktop
 
 Alternatives considered: user-level socket units with linger. Rejected: lingering every user on every host starts all their `default.target` user services (syncthing, mcp-gateway, …) at boot whether or not anyone ever connects.
 
-### D4: Authentication is wayvnc VeNCrypt (TLS) + PAM, enforced as owner-only
+**Registration.** The module is a *core* module (always imported), and `modules.remoteDesktop` maps to `cairn.remoteDesktop.enable`. A flag-gated import would hide `cairn.remoteDesktop.client.enable`, and pangolin needs the client without serving anything.
 
-wayvnc runs as U with `enable_auth=true`, `enable_pam=true`, and a TLS cert and key. Clients use VeNCrypt X509Plain or TLSPlain, which TigerVNC and Remmina (libvncclient) both support. wayvnc checks credentials through PAM as an unprivileged process, and `unix_chkpwd` only verifies the calling user's own password, so only U can unlock U's session. The `remote-desktop` spec's Owner-only requirement relies on this, and task 1.2 checks it.
+**Primary sessions go through `niri-session`.** With `NIRI_CONFIG` pointing at the wrapper config, the remote niri runs as `niri.service`, `graphical-session.target` comes up, and kded6, portals and other session-bound user services start exactly as they would after a greeter login. Afterwards the launcher unsets `NIRI_CONFIG` from the user manager, so a later local login doesn't inherit the remote wrapper. The wrapper also lives in the persistent state dir, so even a stale value points at a valid file. Isolated sessions run `niri -c` directly inside the unit, through the user's login shell.
 
-Each host gets a self-signed certificate, generated on first use by a oneshot unit into `/var/lib/cairn-remote-desktop/` (root-owned key, readable by a `cairn-remote-desktop` group the session units run with). Clients pin it on first connect. Tailscale already encrypts the transport, so TLS here mainly protects the password exchange.
+### D4: Authentication is wayvnc VeNCrypt (TLS) + PAM, with an explicit owner check
 
-Alternatives considered: `tailscale cert`. Rejected because it needs MagicDNS and HTTPS certs enabled on the tailnet, which is a tailnet-wide requirement a library shouldn't impose. RSA-AES (RA2) auth: client support is spottier than VeNCrypt.
+wayvnc runs as U with `enable_auth=true`, `enable_pam=true`, and a TLS cert and key. Clients use VeNCrypt X509Plain or TLSPlain, which TigerVNC and Remmina (libvncclient) both support.
+
+wayvnc always opens the PAM service `wayvnc` (hardcoded in `src/pam_auth.c`), and every user's wayvnc shares that service. Owner-only is enforced **explicitly**, so it doesn't depend on `unix_chkpwd` internals:
+
+```
+auth requisite pam_exec.so quiet <check-owner>   # [ "$PAM_USER" = "$(id -un)" ]
+auth ...       pam_unix.so                        # normal password check
+account ...    pam_unix.so
+```
+
+`pam_exec` runs the check as the calling process, which is wayvnc running as U. So a login name other than U fails before any password is looked at, on every host, whatever the number of users. `unix_chkpwd` refusing to verify other users' passwords for an unprivileged caller is a second, independent layer.
+
+**TLS keys are per user, not per host.** On first start, the session unit generates a self-signed cert and key in `StateDirectory=cairn-remote-desktop/U` (mode 0700, owned by U). One user can't read another user's key, so on a multi-user host user A can't impersonate the server to user B. The cert persists, so the client's pinned fingerprint stays stable. Tailscale already encrypts the transport, so TLS here mainly protects the password exchange.
+
+Alternatives considered: one host-wide key readable by a shared group. Rejected for the impersonation reason above. `tailscale cert`: needs MagicDNS and HTTPS certs enabled on the tailnet, which a library shouldn't require. RSA-AES (RA2) auth: client support is spottier than VeNCrypt.
 
 ### D5: Network exposure is BindToDevice plus interface-scoped firewall
 
@@ -103,10 +131,11 @@ Remmina is GTK3 and runs natively on Wayland. When it grabs the keyboard, niri h
 
 ## Risks / Trade-offs
 
-- [Nested niri under cage misbehaves: input focus, output sizing, frame pacing] → Task 1.1 is a spike that proves the stack by hand before any module code. Fallback host is sway headless. If niri's headless backend is reachable, drop the host compositor entirely.
+- [Nested niri under cage misbehaves] → Settled by the task 1.1 spike: frames, sizing, pointer, keybinds and DMS all work (see D2). Remaining client-side risk is D9's keyboard grab.
 - [Unauthenticated tailnet connections start a session (spawning happens before VNC auth)] → Accepted for v1. Only reachable from the tailnet, the session grants nothing without the owner's password, and it costs one idle session. Revisit with an idle-unauthenticated timeout if it ever matters.
-- [`unix_chkpwd` behaviour differs (for example a PAM stack that doesn't use `pam_unix`), breaking owner-only auth] → Task 1.2 checks it explicitly. If it fails, the launcher passes wayvnc a PAM service whose stack adds `pam_succeed_if user = U`.
+- [A PAM misconfiguration lets user B unlock user A's session] → The explicit `pam_exec` owner check (D4) is the first `auth` rule, and gate task 7.1 proves it on mini (multiple users) before the end-to-end test.
 - [Users without a local password (key-only SSH, autologin) can't authenticate] → Documented. Remote desktop needs a password for each user.
+- [The login keyring stays locked in remote sessions] → `pam_gnome_keyring` is in the `wayvnc` auth stack (after the owner check), and it can unlock an already-running daemon at auth time. Best effort, checked in 7.4.
 - [Software rendering on GPU-less hosts is slow] → Accepted. Over-the-tailnet VNC at 1080p is usable with llvmpipe for desktop work.
 - [Isolated sessions send portal UI to the local display] → Documented limitation (D6). Most remote use (monitorless mini, an unattended desktop) gets a primary session anyway.
 - [Super/Mod captured by the client's own compositor] → Remmina's keyboard grab plus niri's shortcuts-inhibit (D9). Verified in task 4.2.

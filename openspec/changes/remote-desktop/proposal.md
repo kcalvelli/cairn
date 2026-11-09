@@ -8,9 +8,9 @@ Off-the-shelf options don't fit niri. GNOME Remote Desktop needs `org.gnome.Mutt
 
 ## What Changes
 
-- New flagged NixOS module `remote-desktop` (`modules.remoteDesktop = true` in host config) that serves per-user, on-demand headless niri sessions over VNC.
+- New NixOS module `remote-desktop`, always imported (so the client works anywhere) and serving only when the host sets `modules.remoteDesktop = true`. It serves per-user, on-demand headless niri sessions over VNC.
 - Each session is a niri instance nested inside a headless `cage` host compositor, started as a real logind session for the target user (PAM, `pam_systemd`) the first time someone connects. It keeps running across disconnects until the user logs out.
-- `wayvnc` attaches to the nested niri and serves it over a per-session Unix socket. A per-user systemd socket on the Tailscale interface forwards connections to it via `systemd-socket-proxyd`.
+- `wayvnc` attaches to the headless `cage` host (so niri keybinds work, see design D1) and serves it over a per-session Unix socket. A per-user systemd socket on the Tailscale interface forwards connections to it via `systemd-socket-proxyd`.
 - Authentication is VeNCrypt (TLS) with PAM, so only the session owner's own password unlocks their session. A self-signed TLS certificate is generated per host on first use.
 - Network exposure is the Tailscale interface only: sockets bind to `tailscale0` and the firewall opens the ports there and nowhere else. The module asserts that Tailscale is enabled.
 - New per-user option `cairn.users.users.<name>.remoteDesktop.port`. User files are shared across hosts, so a user's port is the same everywhere in the fleet. Ports must be unique per host.
@@ -29,8 +29,8 @@ Off-the-shelf options don't fit niri. GNOME Remote Desktop needs `org.gnome.Mutt
 
 ## Impact
 
-- **New code**: `modules/remote-desktop/default.nix` (server, sockets, PAM service, firewall, cert generation, session launcher), registered in `modules/default.nix` and as a flagged module in `lib/default.nix`.
-- **Modified**: `modules/users.nix` (new per-user option), `home/desktop/niri.nix` (conditional env import), `home/desktop/normie.nix` if it carries the same spawn, and `scripts/init-config.sh` / templates (offer the flag).
+- **New code**: `modules/remote-desktop/default.nix` (server, sockets, PAM service, firewall, cert generation, session launcher), registered in `modules/default.nix` and as a core module in `lib/default.nix`, with `modules.remoteDesktop` mapped to `cairn.remoteDesktop.enable`.
+- **Modified**: `modules/users.nix` (new per-user option), `home/desktop/niri.nix` (conditional env import), `home/desktop/normie.nix` if it carries the same spawn, and `scripts/init-config.sh` / templates (offer the flag, and give every new user a unique port).
 - **Dependencies (nixpkgs)**: `cage`, `wayvnc`, `wlr-randr`, `remmina` (client), `openssl` (cert generation). No new flake inputs.
 - **Hosts**: no effect unless `modules.remoteDesktop` is set. When it is, each user's port opens on `tailscale0` only.
 - **Known limits (v1)**: no audio; fixed session resolution (configurable, no client-driven resize); in an isolated secondary session, portal dialogs and screencasts go to the user's local session.

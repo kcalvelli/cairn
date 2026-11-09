@@ -101,6 +101,7 @@ Gather the following from the user. For detected values, confirm them as default
 8. **Additional users** — optional, loop until user says no. Each has: username, full name, email, isAdmin (true/false)
 9. **Optional features**:
    - Gaming (Steam, GameMode, Proton) — `true`/`false`
+   - Remote desktop (tailnet-only niri sessions, any user on any host) — `true`/`false`. Needs networking (Tailscale). Give every user a unique `remoteDesktop.port` in their user file, starting at 5901.
    - PIM (cairn-mail email management) — `true`/`false`
      - If enabled: role — `"server"` (runs backend + sync) or `"client"` (PWA access only)
      - If server: ask which user to run the service as (typically the primary user)
@@ -205,6 +206,7 @@ Generate this file at `hosts/<HOSTNAME>.nix`:
       users = true;
       virt = <ENABLE_VIRT>;
       gaming = <ENABLE_GAMING>;
+      remoteDesktop = <ENABLE_REMOTE_DESKTOP>;
       pim = <ENABLE_PIM>;
       secrets = <ENABLE_SECRETS>;
     };

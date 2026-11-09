@@ -60,6 +60,19 @@ let
           '';
         };
 
+        remoteDesktop.port = lib.mkOption {
+          type = lib.types.nullOr lib.types.port;
+          default = null;
+          description = ''
+            TCP port for this user's remote desktop session (tailnet only).
+            Declared once in the user file, so it is the same on every host
+            that lists this user and has `modules.remoteDesktop = true`.
+            Must be unique among the users of any one host. null means no
+            remote desktop listener for this user.
+          '';
+          example = 5901;
+        };
+
         extraGroups = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [ ];
