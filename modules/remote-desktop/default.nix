@@ -69,8 +69,17 @@ let
     [ -n "$run" ] && [ -s "$run/display" ] || exit 0
     systemctl --user stop cairn-rd-graphical-session.service || true
     if systemctl --user show-environment | grep -qx "WAYLAND_DISPLAY=$(cat "$run/display")"; then
+      # Still ours, so no local login took over: shut the graphical session
+      # down for real. Dropping our hold isn't enough; xdg-desktop-portal keeps
+      # the target "needed" (niri-session force-stops it for the same reason),
+      # and a stale target would make the next remote session think someone
+      # else is logged in.
+      systemctl --user stop graphical-session.target || true
+      # The user's own --all import (cairn-import-session-env) brings in the
+      # session id and class too; those die with the session as well.
       systemctl --user unset-environment WAYLAND_DISPLAY DISPLAY NIRI_SOCKET \
-        XDG_SESSION_TYPE XDG_SESSION_DESKTOP XDG_CURRENT_DESKTOP RD_RUN || true
+        XDG_SESSION_TYPE XDG_SESSION_DESKTOP XDG_CURRENT_DESKTOP \
+        XDG_SESSION_ID XDG_SESSION_CLASS RD_RUN || true
     fi
     rm -f "$run/display"
   '';
@@ -250,6 +259,9 @@ let
 
     services."cairn-rd-session-${name}" = {
       description = "Remote desktop session for ${name}";
+      # A rebuild must not kick someone out of their desktop (or spin up an
+      # empty one nobody asked for). Changes apply on the next session.
+      restartIfChanged = false;
       after = [
         "systemd-user-sessions.service"
         "tailscaled.service"
