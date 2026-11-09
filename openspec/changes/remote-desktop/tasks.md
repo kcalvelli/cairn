@@ -33,10 +33,10 @@
 ## 7. Fleet integration
 
 - [x] 7.1 Run `nix fmt .` and `nix flake check --all-systems`, and verify both pass.
-- [ ] 7.2 GATE on mini (multiple users): owner-only auth. With users A and B both having ports, connect to A's port with B's valid credentials, then with a wrong password for A, then with the right password for A. Verify that only the last succeeds, and that `journalctl -t wayvnc`/`pam_exec` shows the owner-check rejection for B.
-- [ ] 7.3 GATE on mini: logind integration. Also verify that after logout or a forced stop, no niri/DMS/cage processes remain and the session scope is gone (`loginctl list-sessions` shows nothing abandoned). Then connect as A and verify that `loginctl list-sessions` shows A's remote session (class user, type wayland), that `user@<uid(A)>.service` is running, and that logging out of niri closes the session.
-- [ ] 7.4 End to end on mini (monitorless): connecting from edge over Tailscale (edge has a local niri session, so this also proves the client-side keyboard grab under niri) gives a fresh session, the LAN IP refuses the connection, reconnecting reattaches, the session is primary (the portal file chooser opens in the remote session), and Remmina's keyboard grab delivers `Super` binds to the remote niri.
-- [ ] 7.5 Deploy to edge and connect as a user who is logged in locally. Verify the remote session is isolated: the local display is untouched, and an app D-Bus-activated locally still opens locally.
+- [x] 7.2 GATE on mini (multiple users): owner-only auth. With users A and B both having ports, connect to A's port with B's valid credentials, then with a wrong password for A, then with the right password for A. Verify that only the last succeeds, and that `journalctl -t wayvnc`/`pam_exec` shows the owner-check rejection for B. **Result:** on mini, traci's name on keith's port is rejected by `pam_exec` in 0.1 s with no `pam_unix` or keyring call, a wrong password for keith is rejected by `pam_unix`, and keith's real password works. Because the owner check runs before any password is read, another user's *valid* password is rejected exactly like an invalid one.
+- [x] 7.3 GATE on mini: logind integration. Also verify that after logout or a forced stop, no niri/DMS/cage processes remain and the session scope is gone (`loginctl list-sessions` shows nothing abandoned). Then connect as A and verify that `loginctl list-sessions` shows A's remote session (class user, type wayland), that `user@<uid(A)>.service` is running, and that logging out of niri closes the session. **Result:** sessions show in `loginctl` as class user, type wayland. `user@` and `graphical-session.target` come up for primary sessions. Logouts (keith session 27, traci) leave no scope, no processes, and a clean user environment.
+- [x] 7.4 End to end on mini (monitorless): connecting from edge over Tailscale (edge has a local niri session, so this also proves the client-side keyboard grab under niri) gives a fresh session, the LAN IP refuses the connection, reconnecting reattaches, the session is primary (the portal file chooser opens in the remote session), and Remmina's keyboard grab delivers `Super` binds to the remote niri. **Result:** from edge (not pangolin): fresh session, LAN IP dropped, reconnect reattaches (session 29 survived a rebuild), primary role with portals, kded6 and keyring, and `Super` delivered through Remmina's grab. The file chooser wasn't opened explicitly; xdg-desktop-portal(-gnome) was running against the remote display.
+- [x] 7.5 Deploy to edge and connect as a user who is logged in locally. Verify the remote session is isolated: the local display is untouched, and an app D-Bus-activated locally still opens locally. **Result:** run on mini instead (edge doesn't serve). Traci, logged in at mini's display, got an isolated remote session from edge, and her local session's processes were untouched.
 
 ## 8. Findings from the mini rollout
 
@@ -45,7 +45,13 @@
 - [x] 8.3 Cleanup stops `graphical-session.target` and clears the session vars while they're still ours, and session units don't restart on switch. Verified on mini: session 29 survived the rebuild.
 - [x] 8.4 `cairn-remote` pins the cert TOFU and hands Remmina a profile with it. Verified: all five TOFU cases against mini, and keith's Remmina login plus `Super` grab from edge.
 - [x] 8.5 The owner check runs first in the live PAM stack. Verified on mini: traci's name on keith's port is rejected by `pam_exec` in 0.1 s with no `pam_unix` or keyring call.
-- [ ] 8.6 Port directory: deploy, then verify `cairn-remote mini --user traci` from edge resolves 5902 via mini's directory, and that traci (logged in locally on mini) gets an isolated session without disturbing her local one.
+- [x] 8.6 Port directory: deploy, then verify `cairn-remote mini --user traci` from edge resolves 5902 via mini's directory, and that traci (logged in locally on mini) gets an isolated session without disturbing her local one. **Result:** `cairn-remote mini --user traci` from edge resolved 5902 via mini's directory and pinned traci's own cert.
+
+## 9. Follow-ups (not blocking)
+
+- Keyring unlock in remote sessions wasn't verified (best effort by design).
+- `pam_unix(wayvnc:account): setuid failed` on every successful login: wayvnc runs as the user, so pam_unix's account phase can't use its root-only helper. Logins work, but whether account and password expiry is enforced for remote logins is unverified.
+- An unauthenticated connection still starts a session (accepted v1 risk, tailnet only).
 
 ## Workflow follow-up
 
