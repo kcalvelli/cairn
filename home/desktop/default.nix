@@ -41,7 +41,6 @@
   # DankMaterialShell configuration
   programs.dank-material-shell = {
     enable = true;
-    quickshell.package = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
     # Systemd integration - DISABLED to use Niri spawn-at-startup instead
     # This eliminates race conditions with PipeWire/Wayland at boot

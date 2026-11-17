@@ -421,9 +421,13 @@ in
     };
 
     # CAIRN: Alternative screenshot bindings (keep for compatibility)
-    "Mod+Shift+S".action.screenshot = { };
-    "Mod+Ctrl+S".action.screenshot-screen = {
-      write-to-disk = true;
+    # mkForce because DMS now squats on these for scratchpad move/restore.
+    # Screenshots were here first. DMS keeps Mod+S for scratchpad toggle.
+    "Mod+Shift+S".action = lib.mkForce { screenshot = { }; };
+    "Mod+Ctrl+S".action = lib.mkForce {
+      screenshot-screen = {
+        write-to-disk = true;
+      };
     };
     "Mod+Alt+S".action.screenshot-screen = { };
 

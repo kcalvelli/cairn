@@ -189,7 +189,6 @@ in
     # Enable DankMaterialShell (greeter now lives in the dank-greeter module)
     programs.dank-material-shell = {
       enable = true; # Provides system packages (matugen, hyprpicker, cava, etc.)
-      quickshell.package = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
     };
 
     # DMS greeter — split out of DankMaterialShell into its own repo
@@ -198,9 +197,6 @@ in
       compositor.name = "niri";
       # Use first admin user's home for greeter config
       configHome = "/home/${firstAdmin}";
-      # Pin the same quickshell as DMS so the greeter and the live shell
-      # run the identical binary — one build in the closure, no version skew.
-      quickshell.package = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
     };
 
     # GNOME Keyring for credentials (PAM configuration)

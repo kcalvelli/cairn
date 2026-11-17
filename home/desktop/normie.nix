@@ -31,7 +31,6 @@
   # DankMaterialShell configuration
   programs.dank-material-shell = {
     enable = true;
-    quickshell.package = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
     systemd = {
       enable = false;
