@@ -223,10 +223,29 @@ let
     exec cage -d -- ${sessionScript}
   '';
 
+  # BindToDevice= makes a socket BindsTo= and After= the interface's device
+  # unit. With default dependencies that's a boot deadlock: sockets come up
+  # before basic.target, tailscaled only starts after it, so tailscale0 can't
+  # exist yet. The device job times out at 90s, the sockets die, and the whole
+  # boot stalls with them. So: no early-boot ordering, and the interface
+  # appearing (at boot, or after tailscaled restarts and BindsTo= stopped us)
+  # is what pulls the sockets in.
+  tsDevice = "sys-subsystem-net-devices-${tsIface}.device";
+  tsSocketDeps = {
+    wantedBy = [
+      "multi-user.target"
+      tsDevice
+    ];
+    requires = [ "sysinit.target" ];
+    after = [ "sysinit.target" ];
+    before = [ "shutdown.target" ];
+    conflicts = [ "shutdown.target" ];
+    unitConfig.DefaultDependencies = false;
+  };
+
   mkUserUnits = name: port: {
-    sockets."cairn-rd-${name}" = {
+    sockets."cairn-rd-${name}" = tsSocketDeps // {
       description = "Remote desktop listener for ${name} (tailnet only)";
-      wantedBy = [ "sockets.target" ];
       socketConfig = {
         ListenStream = toString port;
         BindToDevice = tsIface;
@@ -305,9 +324,8 @@ let
   );
 
   directoryUnits = {
-    sockets.cairn-rd-directory = {
+    sockets.cairn-rd-directory = tsSocketDeps // {
       description = "Remote desktop port directory (tailnet only)";
-      wantedBy = [ "sockets.target" ];
       socketConfig = {
         ListenStream = toString cfg.directoryPort;
         BindToDevice = tsIface;
